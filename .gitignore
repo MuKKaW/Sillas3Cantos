@@ -1,0 +1,19 @@
+# .NET
+**/bin/
+**/obj/
+**/.vs/
+**/TestResults/
+
+# IDE
+.vscode/
+.idea/
+
+# Frontend futuro
+**/node_modules/
+**/dist/
+**/build/
+
+# Env
+.env
+.env.*
+!.env.example
