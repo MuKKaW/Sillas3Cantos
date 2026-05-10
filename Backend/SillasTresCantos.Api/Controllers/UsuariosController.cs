@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
-using SillasTresCantos.Api.Models;
+using SillasTresCantos.Api.DTOs;
 using SillasTresCantos.Api.Services;
 
 namespace SillasTresCantos.Api.Controllers;
@@ -17,21 +17,27 @@ public class UsuariosController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<Usuario>>> GetUsuarios([FromHeader(Name = "IdUsuario")] int idUsuario = 0, [FromHeader(Name = "Nombre")] string nombre = "", [FromHeader(Name = "OrderAscent")] bool orderAsc = true)
+    public async Task<ActionResult<List<GetUsuarioDTO>>> GetUsuarios([FromHeader(Name = "IdUsuario")] int idUsuario = 0, [FromHeader(Name = "Nombre")] string nombre = "", [FromHeader(Name = "OrderAscent")] bool orderAsc = true)
     {
-        List<Usuario> usuarios = await _usuarioService.GetUsuariosAsync(idUsuario, nombre, orderAsc);
+        GetUsuariosFiltroDTO filtro = new()
+        {
+            IdUsuario = idUsuario,
+            Nombre = nombre,
+            OrderAscent = orderAsc
+        };
+        List<GetUsuarioDTO> usuarios = await _usuarioService.GetUsuariosAsync(filtro);
         return Ok(usuarios);
     }
 
     [HttpPost]
-    public async Task<ActionResult<bool>> PostUsuario([FromBody] Usuario usuario)
+    public async Task<ActionResult<bool>> PostUsuario([FromBody] PostUsuarioDTO usuario)
     {
         bool creado = await _usuarioService.PostUsuarioAsync(usuario);
         return Ok(creado);
     }
 
     [HttpPut]
-    public async Task<ActionResult<bool>> PutUsuario([FromBody] Usuario usuario)
+    public async Task<ActionResult<bool>> PutUsuario([FromBody] PutUsuarioDTO usuario)
     {
         bool actualizado = await _usuarioService.PutUsuarioAsync(usuario);
         return Ok(actualizado);

@@ -1,3 +1,4 @@
+using SillasTresCantos.Api.DTOs;
 using SillasTresCantos.Api.Models;
 
 namespace SillasTresCantos.Api.Services;
@@ -7,28 +8,40 @@ public class UsuarioService : IUsuarioService
     private static readonly List<Usuario> Usuarios = [];
     private static int _nextId = 1;
 
-    public Task<List<Usuario>> GetUsuariosAsync(int idUsuario, string nombre, bool orderAsc)
+    public Task<List<GetUsuarioDTO>> GetUsuariosAsync(GetUsuariosFiltroDTO filtro)
     {
         IEnumerable<Usuario> query = Usuarios;
 
-        if (idUsuario > 0)
+        if (filtro.IdUsuario > 0)
         {
-            query = query.Where(u => u.Id == idUsuario);
+            query = query.Where(u => u.Id == filtro.IdUsuario);
         }
 
-        if (!string.IsNullOrWhiteSpace(nombre))
+        if (!string.IsNullOrWhiteSpace(filtro.Nombre))
         {
-            query = query.Where(u => (u.Nombre ?? string.Empty).Contains(nombre, StringComparison.OrdinalIgnoreCase));
+            query = query.Where(u => (u.Nombre ?? string.Empty).Contains(filtro.Nombre, StringComparison.OrdinalIgnoreCase));
         }
 
-        query = orderAsc
+        query = filtro.OrderAscent
             ? query.OrderBy(u => u.Nombre ?? string.Empty)
             : query.OrderByDescending(u => u.Nombre ?? string.Empty);
 
-        return Task.FromResult(query.ToList());
+        List<GetUsuarioDTO> usuarios = query
+            .Select(u => new GetUsuarioDTO
+            {
+                Id = u.Id,
+                Nombre = u.Nombre,
+                Apellido = u.Apellido,
+                Email = u.Email,
+                FechaRegistro = u.FechaRegistro,
+                EstaActivo = u.EstaActivo
+            })
+            .ToList();
+
+        return Task.FromResult(usuarios);
     }
 
-    public Task<bool> PostUsuarioAsync(Usuario usuario)
+    public Task<bool> PostUsuarioAsync(PostUsuarioDTO usuario)
     {
         if (string.IsNullOrWhiteSpace(usuario.Email))
         {
@@ -40,33 +53,22 @@ public class UsuarioService : IUsuarioService
             return Task.FromResult(false);
         }
 
-        int newId = usuario.Id > 0 ? usuario.Id : _nextId++;
+        int newId = _nextId++;
 
-        if (Usuarios.Any(u => u.Id == newId))
-        {
-            return Task.FromResult(false);
-        }
-
-        if (newId >= _nextId)
-        {
-            _nextId = newId + 1;
-        }
-
-        Usuario nuevoUsuario = new()
+        Usuarios.Add(new Usuario
         {
             Id = newId,
             Nombre = usuario.Nombre,
             Apellido = usuario.Apellido,
             Email = usuario.Email,
-            FechaRegistro = usuario.FechaRegistro ?? DateTime.UtcNow,
-            EstaActivo = usuario.EstaActivo ?? true
-        };
+            FechaRegistro = DateTime.UtcNow,
+            EstaActivo = true
+        });
 
-        Usuarios.Add(nuevoUsuario);
         return Task.FromResult(true);
     }
 
-    public Task<bool> PutUsuarioAsync(Usuario usuario)
+    public Task<bool> PutUsuarioAsync(PutUsuarioDTO usuario)
     {
         Usuario? existente = Usuarios.FirstOrDefault(u => u.Id == usuario.Id);
         if (existente is null)
@@ -86,7 +88,6 @@ public class UsuarioService : IUsuarioService
         existente.Nombre = usuario.Nombre;
         existente.Apellido = usuario.Apellido;
         existente.Email = string.IsNullOrWhiteSpace(usuario.Email) ? existente.Email : usuario.Email;
-        existente.FechaRegistro = usuario.FechaRegistro ?? existente.FechaRegistro;
         existente.EstaActivo = usuario.EstaActivo ?? existente.EstaActivo;
 
         return Task.FromResult(true);
