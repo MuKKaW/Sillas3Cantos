@@ -5,7 +5,8 @@ namespace SillasTresCantos.Api.Services;
 public interface IUsuarioService
 {
     Task<List<GetUsuarioDTO>> GetUsuariosAsync(GetUsuariosFiltroDTO filtro);
-    Task<bool> PostUsuarioAsync(PostUsuarioDTO usuario);
-    Task<bool> PutUsuarioAsync(PutUsuarioDTO usuario);
-    Task<bool> DeleteUsuarioAsync(int id);
+    Task<GetUsuarioDTO?> GetUsuarioByIdAsync(int id);
+    Task<UsuarioOperationResult> PostUsuarioAsync(PostUsuarioDTO usuario);
+    Task<UsuarioOperationResult> PutUsuarioAsync(PutUsuarioDTO usuario);
+    Task<UsuarioOperationResult> DeleteUsuarioAsync(int id);
 }

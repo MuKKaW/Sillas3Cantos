@@ -27,35 +27,43 @@ public class UsuarioService : IUsuarioService
             : query.OrderByDescending(u => u.Nombre ?? string.Empty);
 
         List<GetUsuarioDTO> usuarios = query
-            .Select(u => new GetUsuarioDTO
-            {
-                Id = u.Id,
-                Nombre = u.Nombre,
-                Apellido = u.Apellido,
-                Email = u.Email,
-                FechaRegistro = u.FechaRegistro,
-                EstaActivo = u.EstaActivo
-            })
+            .Select(MapToGetUsuarioDTO)
             .ToList();
 
         return Task.FromResult(usuarios);
     }
 
-    public Task<bool> PostUsuarioAsync(PostUsuarioDTO usuario)
+    public Task<GetUsuarioDTO?> GetUsuarioByIdAsync(int id)
+    {
+        if (id <= 0)
+        {
+            return Task.FromResult<GetUsuarioDTO?>(null);
+        }
+
+        Usuario? existente = Usuarios.FirstOrDefault(u => u.Id == id);
+        if (existente is null)
+        {
+            return Task.FromResult<GetUsuarioDTO?>(null);
+        }
+
+        return Task.FromResult<GetUsuarioDTO?>(MapToGetUsuarioDTO(existente));
+    }
+
+    public Task<UsuarioOperationResult> PostUsuarioAsync(PostUsuarioDTO usuario)
     {
         if (string.IsNullOrWhiteSpace(usuario.Email))
         {
-            return Task.FromResult(false);
+            return Task.FromResult(UsuarioOperationResult.ValidationError());
         }
 
         if (Usuarios.Any(u => string.Equals(u.Email, usuario.Email, StringComparison.OrdinalIgnoreCase)))
         {
-            return Task.FromResult(false);
+            return Task.FromResult(UsuarioOperationResult.ConflictError());
         }
 
         int newId = _nextId++;
 
-        Usuarios.Add(new Usuario
+        Usuario nuevoUsuario = new()
         {
             Id = newId,
             Nombre = usuario.Nombre,
@@ -63,17 +71,29 @@ public class UsuarioService : IUsuarioService
             Email = usuario.Email,
             FechaRegistro = DateTime.UtcNow,
             EstaActivo = true
-        });
+        };
 
-        return Task.FromResult(true);
+        Usuarios.Add(nuevoUsuario);
+
+        return Task.FromResult(UsuarioOperationResult.Success(MapToGetUsuarioDTO(nuevoUsuario)));
     }
 
-    public Task<bool> PutUsuarioAsync(PutUsuarioDTO usuario)
+    public Task<UsuarioOperationResult> PutUsuarioAsync(PutUsuarioDTO usuario)
     {
+        if (usuario.Id <= 0)
+        {
+            return Task.FromResult(UsuarioOperationResult.ValidationError());
+        }
+
         Usuario? existente = Usuarios.FirstOrDefault(u => u.Id == usuario.Id);
         if (existente is null)
         {
-            return Task.FromResult(false);
+            return Task.FromResult(UsuarioOperationResult.NotFoundError());
+        }
+
+        if (usuario.Email is not null && string.IsNullOrWhiteSpace(usuario.Email))
+        {
+            return Task.FromResult(UsuarioOperationResult.ValidationError());
         }
 
         if (!string.IsNullOrWhiteSpace(usuario.Email))
@@ -81,7 +101,7 @@ public class UsuarioService : IUsuarioService
             bool emailDuplicado = Usuarios.Any(u => u.Id != usuario.Id && string.Equals(u.Email, usuario.Email, StringComparison.OrdinalIgnoreCase));
             if (emailDuplicado)
             {
-                return Task.FromResult(false);
+                return Task.FromResult(UsuarioOperationResult.ConflictError());
             }
         }
 
@@ -90,18 +110,34 @@ public class UsuarioService : IUsuarioService
         existente.Email = string.IsNullOrWhiteSpace(usuario.Email) ? existente.Email : usuario.Email;
         existente.EstaActivo = usuario.EstaActivo ?? existente.EstaActivo;
 
-        return Task.FromResult(true);
+        return Task.FromResult(UsuarioOperationResult.Success(MapToGetUsuarioDTO(existente)));
     }
 
-    public Task<bool> DeleteUsuarioAsync(int id)
+    public Task<UsuarioOperationResult> DeleteUsuarioAsync(int id)
     {
+        if (id <= 0)
+        {
+            return Task.FromResult(UsuarioOperationResult.ValidationError());
+        }
+
         Usuario? existente = Usuarios.FirstOrDefault(u => u.Id == id);
         if (existente is null)
         {
-            return Task.FromResult(false);
+            return Task.FromResult(UsuarioOperationResult.NotFoundError());
         }
 
         Usuarios.Remove(existente);
-        return Task.FromResult(true);
+        return Task.FromResult(UsuarioOperationResult.Success());
     }
+
+    private static GetUsuarioDTO MapToGetUsuarioDTO(Usuario usuario) =>
+        new()
+        {
+            Id = usuario.Id,
+            Nombre = usuario.Nombre,
+            Apellido = usuario.Apellido,
+            Email = usuario.Email,
+            FechaRegistro = usuario.FechaRegistro,
+            EstaActivo = usuario.EstaActivo
+        };
 }

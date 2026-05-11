@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using SillasTresCantos.Api.DTOs;
 using SillasTresCantos.Api.Services;
 
@@ -30,12 +30,7 @@ public class UsuariosController : ControllerBase
     [HttpGet("{id:int}")]
     public async Task<ActionResult<GetUsuarioDTO>> GetUsuarioById(int id)
     {
-        GetUsuariosFiltroDTO filtro = new()
-        {
-            IdUsuario = id
-        };
-
-        GetUsuarioDTO? usuario = (await _usuarioService.GetUsuariosAsync(filtro)).FirstOrDefault();
+        GetUsuarioDTO? usuario = await _usuarioService.GetUsuarioByIdAsync(id);
         if (usuario is null)
         {
             return NotFound();
@@ -45,24 +40,55 @@ public class UsuariosController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<bool>> PostUsuario([FromBody] PostUsuarioDTO usuario)
+    public async Task<ActionResult<GetUsuarioDTO>> PostUsuario([FromBody] PostUsuarioDTO usuario)
     {
-        bool creado = await _usuarioService.PostUsuarioAsync(usuario);
-        return Ok(creado);
+        UsuarioOperationResult resultado = await _usuarioService.PostUsuarioAsync(usuario);
+        if (!resultado.IsSuccess)
+        {
+            return resultado.Error switch
+            {
+                UsuarioOperationError.Validation => BadRequest("El email es obligatorio."),
+                UsuarioOperationError.Conflict => Conflict("Ya existe un usuario con ese email."),
+                _ => StatusCode(StatusCodes.Status500InternalServerError)
+            };
+        }
+
+        if (resultado.Usuario is null)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError);
+        }
+
+        return CreatedAtAction(nameof(GetUsuarioById), new { id = resultado.Usuario.Id }, resultado.Usuario);
     }
 
     [HttpPut("{id:int}")]
-    public async Task<ActionResult<bool>> PutUsuario(int id, [FromBody] PutUsuarioDTO usuario)
+    public async Task<IActionResult> PutUsuario(int id, [FromBody] PutUsuarioDTO usuario)
     {
         usuario.Id = id;
-        bool actualizado = await _usuarioService.PutUsuarioAsync(usuario);
-        return Ok(actualizado);
+        UsuarioOperationResult resultado = await _usuarioService.PutUsuarioAsync(usuario);
+
+        return resultado.Error switch
+        {
+            UsuarioOperationError.None => NoContent(),
+            UsuarioOperationError.Validation => BadRequest("Los datos de usuario no son validos."),
+            UsuarioOperationError.NotFound => NotFound(),
+            UsuarioOperationError.Conflict => Conflict("Ya existe un usuario con ese email."),
+            _ => StatusCode(StatusCodes.Status500InternalServerError)
+        };
     }
 
     [HttpDelete("{id:int}")]
-    public async Task<ActionResult<bool>> DeleteUsuario(int id)
+    public async Task<IActionResult> DeleteUsuario(int id)
     {
-        bool borrado = await _usuarioService.DeleteUsuarioAsync(id);
-        return Ok(borrado);
+        UsuarioOperationResult resultado = await _usuarioService.DeleteUsuarioAsync(id);
+
+        return resultado.Error switch
+        {
+            UsuarioOperationError.None => NoContent(),
+            UsuarioOperationError.Validation => BadRequest("El identificador no es valido."),
+            UsuarioOperationError.NotFound => NotFound(),
+            _ => StatusCode(StatusCodes.Status500InternalServerError)
+        };
     }
 }
+
