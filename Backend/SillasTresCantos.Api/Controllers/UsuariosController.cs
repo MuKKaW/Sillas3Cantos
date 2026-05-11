@@ -1,4 +1,3 @@
-using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using SillasTresCantos.Api.DTOs;
 using SillasTresCantos.Api.Services;
@@ -6,7 +5,7 @@ using SillasTresCantos.Api.Services;
 namespace SillasTresCantos.Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/usuarios")]
 public class UsuariosController : ControllerBase
 {
     private readonly IUsuarioService _usuarioService;
@@ -17,16 +16,32 @@ public class UsuariosController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<GetUsuarioDTO>>> GetUsuarios([FromHeader(Name = "IdUsuario")] int idUsuario = 0, [FromHeader(Name = "Nombre")] string nombre = "", [FromHeader(Name = "OrderAscent")] bool orderAsc = true)
+    public async Task<ActionResult<List<GetUsuarioDTO>>> GetUsuarios([FromQuery] string nombre = "", [FromQuery] bool orderAsc = true)
     {
         GetUsuariosFiltroDTO filtro = new()
         {
-            IdUsuario = idUsuario,
             Nombre = nombre,
             OrderAscent = orderAsc
         };
         List<GetUsuarioDTO> usuarios = await _usuarioService.GetUsuariosAsync(filtro);
         return Ok(usuarios);
+    }
+
+    [HttpGet("{id:int}")]
+    public async Task<ActionResult<GetUsuarioDTO>> GetUsuarioById(int id)
+    {
+        GetUsuariosFiltroDTO filtro = new()
+        {
+            IdUsuario = id
+        };
+
+        GetUsuarioDTO? usuario = (await _usuarioService.GetUsuariosAsync(filtro)).FirstOrDefault();
+        if (usuario is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(usuario);
     }
 
     [HttpPost]
@@ -36,15 +51,16 @@ public class UsuariosController : ControllerBase
         return Ok(creado);
     }
 
-    [HttpPut]
-    public async Task<ActionResult<bool>> PutUsuario([FromBody] PutUsuarioDTO usuario)
+    [HttpPut("{id:int}")]
+    public async Task<ActionResult<bool>> PutUsuario(int id, [FromBody] PutUsuarioDTO usuario)
     {
+        usuario.Id = id;
         bool actualizado = await _usuarioService.PutUsuarioAsync(usuario);
         return Ok(actualizado);
     }
 
-    [HttpDelete]
-    public async Task<ActionResult<bool>> DeleteUsuario([FromQuery(Name = "IdUsuario")][Required] int id)
+    [HttpDelete("{id:int}")]
+    public async Task<ActionResult<bool>> DeleteUsuario(int id)
     {
         bool borrado = await _usuarioService.DeleteUsuarioAsync(id);
         return Ok(borrado);
