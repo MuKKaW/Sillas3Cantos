@@ -47,7 +47,7 @@ public class UsuariosController : ControllerBase
         {
             return resultado.Error switch
             {
-                UsuarioOperationError.Validation => BadRequest("El email es obligatorio."),
+                UsuarioOperationError.Validation => BadRequest("Los datos del usuario no son validos."),
                 UsuarioOperationError.Conflict => Conflict("Ya existe un usuario con ese email."),
                 _ => StatusCode(StatusCodes.Status500InternalServerError)
             };

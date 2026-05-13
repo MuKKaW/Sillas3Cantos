@@ -7,7 +7,8 @@ public enum UsuarioOperationError
     None,
     Validation,
     Conflict,
-    NotFound
+    NotFound,
+    Unexpected
 }
 
 public class UsuarioOperationResult
@@ -40,5 +41,11 @@ public class UsuarioOperationResult
         new()
         {
             Error = UsuarioOperationError.NotFound
+        };
+
+    public static UsuarioOperationResult UnexpectedError() =>
+        new()
+        {
+            Error = UsuarioOperationError.Unexpected
         };
 }
