@@ -11,10 +11,32 @@ services:
       MYSQL_USER: app
       MYSQL_PASSWORD: app123
     ports:
-      - "3306:3306"
+      - "1138:3306"
     volumes:
       - mysql_data:/var/lib/mysql
       - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  api:
+    build:
+      context: .
+      dockerfile: Backend/SillasTresCantos.Api/Dockerfile
+    container_name: sillas-tres-cantos-api
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: Server=mysql;Port=3306;Database=sillas_tres_cantos;Uid=app;Pwd=app123;SslMode=None;
+    ports:
+      - "8311:8080"
 
 volumes:
   mysql_data:
