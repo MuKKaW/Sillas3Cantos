@@ -1,4 +1,6 @@
-﻿services:
+﻿name: sillas-tres-cantos
+
+services:
   mysql:
     image: mysql:8.4
     container_name: sillas-tres-cantos-mysql
@@ -10,3 +12,9 @@
       MYSQL_PASSWORD: app123
     ports:
       - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
+
+volumes:
+  mysql_data:
