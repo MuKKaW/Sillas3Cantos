@@ -9,6 +9,7 @@ builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 builder.Services.Configure<DatabaseOptions>(builder.Configuration.GetSection(DatabaseOptions.SectionName));
 builder.Services.AddSingleton<IDbConnectionFactory, MySqlConnectionFactory>();
 builder.Services.AddScoped<IUsuarioRepository, MySqlUsuarioRepository>();
+builder.Services.AddScoped<IMarcaRepository, MySqlMarcaRepository>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
