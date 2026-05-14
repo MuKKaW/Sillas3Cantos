@@ -16,6 +16,7 @@ builder.Services.Configure<AuthOptions>(builder.Configuration.GetSection(AuthOpt
 builder.Services.AddSingleton<IDbConnectionFactory, MySqlConnectionFactory>();
 builder.Services.AddScoped<IUsuarioRepository, MySqlUsuarioRepository>();
 builder.Services.AddScoped<IMarcaRepository, MySqlMarcaRepository>();
+builder.Services.AddScoped<ICategoriaRepository, MySqlCategoriaRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddEndpointsApiExplorer();
 
