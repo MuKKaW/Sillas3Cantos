@@ -18,6 +18,7 @@ builder.Services.AddSingleton<IDbConnectionFactory, MySqlConnectionFactory>();
 builder.Services.AddScoped<IUsuarioRepository, MySqlUsuarioRepository>();
 builder.Services.AddScoped<IMarcaRepository, MySqlMarcaRepository>();
 builder.Services.AddScoped<ICategoriaRepository, MySqlCategoriaRepository>();
+builder.Services.AddScoped<IProductoRepository, MySqlProductoRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddEndpointsApiExplorer();
 
