@@ -1,10 +1,14 @@
-﻿CREATE TABLE IF NOT EXISTS usuarios (
+CREATE TABLE IF NOT EXISTS usuarios (
   id INT AUTO_INCREMENT PRIMARY KEY,
+  username VARCHAR(100) NULL,
+  password_hash VARCHAR(512) NULL,
+  role VARCHAR(30) NULL,
   nombre VARCHAR(100) NULL,
   apellido VARCHAR(100) NULL,
   email VARCHAR(255) NOT NULL,
   fecha_registro DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   esta_activo BOOLEAN NOT NULL DEFAULT TRUE,
+  UNIQUE KEY uq_usuarios_username (username),
   UNIQUE KEY uq_usuarios_email (email)
 );
 

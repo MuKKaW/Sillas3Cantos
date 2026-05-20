@@ -19,7 +19,7 @@ public class MySqlUsuarioRepository : IUsuarioRepository
         await using MySqlConnection connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
         await using MySqlCommand command = connection.CreateCommand();
 
-        StringBuilder sql = new("SELECT id, nombre, apellido, email, fecha_registro, esta_activo FROM usuarios");
+        StringBuilder sql = new("SELECT id, username, password_hash, role, nombre, apellido, email, fecha_registro, esta_activo FROM usuarios");
         List<string> whereClauses = [];
 
         if (idUsuario > 0)
@@ -61,7 +61,7 @@ public class MySqlUsuarioRepository : IUsuarioRepository
         await using MySqlCommand command = connection.CreateCommand();
 
         command.CommandText = """
-                              SELECT id, nombre, apellido, email, fecha_registro, esta_activo
+                              SELECT id, username, password_hash, role, nombre, apellido, email, fecha_registro, esta_activo
                               FROM usuarios
                               WHERE id = @id
                               LIMIT 1;
@@ -107,6 +107,9 @@ public class MySqlUsuarioRepository : IUsuarioRepository
         return new Usuario
         {
             Id = newId,
+            Username = usuario.Username,
+            PasswordHash = usuario.PasswordHash,
+            Role = usuario.Role,
             Nombre = usuario.Nombre,
             Apellido = usuario.Apellido,
             Email = usuario.Email,
@@ -177,9 +180,56 @@ public class MySqlUsuarioRepository : IUsuarioRepository
         return count > 0;
     }
 
+    public async Task<Usuario?> GetUsuarioByUsernameAsync(string username, CancellationToken cancellationToken = default)
+    {
+        await using MySqlConnection connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+        await using MySqlCommand command = connection.CreateCommand();
+
+        command.CommandText = """
+                              SELECT id, username, password_hash, role, nombre, apellido, email, fecha_registro, esta_activo
+                              FROM usuarios
+                              WHERE LOWER(username) = LOWER(@username)
+                              LIMIT 1;
+                              """;
+        command.Parameters.AddWithValue("@username", username);
+
+        await using DbDataReader reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+        {
+            return null;
+        }
+
+        return MapToUsuario(reader);
+    }
+
+    public async Task<bool> ExistsByUsernameAsync(string username, int? excludeId = null, CancellationToken cancellationToken = default)
+    {
+        await using MySqlConnection connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+        await using MySqlCommand command = connection.CreateCommand();
+
+        StringBuilder sql = new("SELECT COUNT(1) FROM usuarios WHERE LOWER(username) = LOWER(@username)");
+        command.Parameters.AddWithValue("@username", username);
+
+        if (excludeId.HasValue)
+        {
+            sql.Append(" AND id <> @excludeId");
+            command.Parameters.AddWithValue("@excludeId", excludeId.Value);
+        }
+
+        command.CommandText = sql.ToString();
+
+        object? result = await command.ExecuteScalarAsync(cancellationToken);
+        int count = Convert.ToInt32(result);
+
+        return count > 0;
+    }
+
     private static Usuario MapToUsuario(DbDataReader reader)
     {
         int idOrdinal = reader.GetOrdinal("id");
+        int usernameOrdinal = reader.GetOrdinal("username");
+        int passwordHashOrdinal = reader.GetOrdinal("password_hash");
+        int roleOrdinal = reader.GetOrdinal("role");
         int nombreOrdinal = reader.GetOrdinal("nombre");
         int apellidoOrdinal = reader.GetOrdinal("apellido");
         int emailOrdinal = reader.GetOrdinal("email");
@@ -189,6 +239,9 @@ public class MySqlUsuarioRepository : IUsuarioRepository
         return new Usuario
         {
             Id = reader.GetInt32(idOrdinal),
+            Username = reader.IsDBNull(usernameOrdinal) ? null : reader.GetString(usernameOrdinal),
+            PasswordHash = reader.IsDBNull(passwordHashOrdinal) ? null : reader.GetString(passwordHashOrdinal),
+            Role = reader.IsDBNull(roleOrdinal) ? null : reader.GetString(roleOrdinal),
             Nombre = reader.IsDBNull(nombreOrdinal) ? null : reader.GetString(nombreOrdinal),
             Apellido = reader.IsDBNull(apellidoOrdinal) ? null : reader.GetString(apellidoOrdinal),
             Email = reader.GetString(emailOrdinal),

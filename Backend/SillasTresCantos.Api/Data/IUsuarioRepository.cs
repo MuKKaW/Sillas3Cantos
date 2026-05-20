@@ -10,4 +10,6 @@ public interface IUsuarioRepository
     Task<bool> UpdateUsuarioAsync(Usuario usuario, CancellationToken cancellationToken = default);
     Task<bool> DeleteUsuarioAsync(int id, CancellationToken cancellationToken = default);
     Task<bool> ExistsByEmailAsync(string email, int? excludeId = null, CancellationToken cancellationToken = default);
+    Task<Usuario?> GetUsuarioByUsernameAsync(string username, CancellationToken cancellationToken = default);
+    Task<bool> ExistsByUsernameAsync(string username, int? excludeId = null, CancellationToken cancellationToken = default);
 }
