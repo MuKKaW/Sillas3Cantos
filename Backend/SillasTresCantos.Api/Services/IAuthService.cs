@@ -4,5 +4,5 @@ namespace SillasTresCantos.Api.Services;
 
 public interface IAuthService
 {
-    LoginResponseDTO? Login(LoginRequestDTO request);
+    Task<LoginResponseDTO?> LoginAsync(LoginRequestDTO request);
 }

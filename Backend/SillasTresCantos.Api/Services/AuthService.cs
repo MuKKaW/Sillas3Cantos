@@ -4,22 +4,26 @@ using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Options;
 using SillasTresCantos.Api.Configuration;
+using SillasTresCantos.Api.Data;
 using SillasTresCantos.Api.DTOs;
+using SillasTresCantos.Api.Models;
 
 namespace SillasTresCantos.Api.Services;
 
 public class AuthService : IAuthService
 {
     private readonly JwtOptions _jwtOptions;
-    private readonly AuthOptions _authOptions;
+    private readonly IUsuarioRepository _usuarioRepository;
+    private readonly IPasswordHasher _passwordHasher;
 
-    public AuthService(IOptions<JwtOptions> jwtOptions, IOptions<AuthOptions> authOptions)
+    public AuthService(IOptions<JwtOptions> jwtOptions, IUsuarioRepository usuarioRepository, IPasswordHasher passwordHasher)
     {
         _jwtOptions = jwtOptions.Value;
-        _authOptions = authOptions.Value;
+        _usuarioRepository = usuarioRepository;
+        _passwordHasher = passwordHasher;
     }
 
-    public LoginResponseDTO? Login(LoginRequestDTO request)
+    public async Task<LoginResponseDTO?> LoginAsync(LoginRequestDTO request)
     {
         string username = request.Username?.Trim() ?? string.Empty;
         string password = request.Password ?? string.Empty;
@@ -28,24 +32,35 @@ public class AuthService : IAuthService
             return null;
         }
 
-        AuthUserOptions? user = _authOptions.Users.FirstOrDefault(x =>
-            string.Equals(x.Username, username, StringComparison.OrdinalIgnoreCase) &&
-            string.Equals(x.Password, password, StringComparison.Ordinal));
-
-        if (user is null)
+        Usuario? user = await _usuarioRepository.GetUsuarioByUsernameAsync(username);
+        if (user is null || user.EstaActivo != true)
         {
             return null;
         }
+
+        if (string.IsNullOrWhiteSpace(user.PasswordHash))
+        {
+            return null;
+        }
+
+        bool isValidPassword = _passwordHasher.Verify(password, user.PasswordHash);
+        if (!isValidPassword)
+        {
+            return null;
+        }
+
+        string role = string.IsNullOrWhiteSpace(user.Role) ? "User" : user.Role;
+        string claimUserName = user.Username ?? username;
 
         byte[] keyBytes = Encoding.UTF8.GetBytes(_jwtOptions.Key);
         DateTime expires = DateTime.UtcNow.AddMinutes(_jwtOptions.ExpirationMinutes);
 
         List<Claim> claims =
         [
-            new(JwtRegisteredClaimNames.Sub, user.Username),
-            new(JwtRegisteredClaimNames.UniqueName, user.Username),
-            new(ClaimTypes.Name, user.Username),
-            new(ClaimTypes.Role, user.Role),
+            new(JwtRegisteredClaimNames.Sub, claimUserName),
+            new(JwtRegisteredClaimNames.UniqueName, claimUserName),
+            new(ClaimTypes.Name, claimUserName),
+            new(ClaimTypes.Role, role),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         ];
 
@@ -65,7 +80,7 @@ public class AuthService : IAuthService
         {
             AccessToken = new JwtSecurityTokenHandler().WriteToken(token),
             ExpiresAtUtc = expires,
-            Role = user.Role
+            Role = role
         };
     }
 }

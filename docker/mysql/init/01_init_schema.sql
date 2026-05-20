@@ -35,3 +35,33 @@ CREATE TABLE IF NOT EXISTS productos (
   FOREIGN KEY (categoria_id) REFERENCES categorias(id),
   FOREIGN KEY (marca_id) REFERENCES marcas(id)
 );
+
+INSERT INTO usuarios (username, password_hash, role, nombre, apellido, email, esta_activo)
+SELECT
+  'admin',
+  'PBKDF2-SHA256$100000$BOxduQOU+22ui1uSedMwNA==$yJ1uE3sDP9UDhbm9k+YRBHNzAKuf09CSOBhnC/FBCFU=',
+  'Admin',
+  'Administrador',
+  'Sistema',
+  'admin@sillas3cantos.local',
+  TRUE
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM usuarios
+  WHERE username = 'admin' OR email = 'admin@sillas3cantos.local'
+);
+
+INSERT INTO usuarios (username, password_hash, role, nombre, apellido, email, esta_activo)
+SELECT
+  'user',
+  'PBKDF2-SHA256$100000$px02f0IJAnpI/qIyvasWog==$EUWDWTf1VGy6dsYL2t0zgYpIQpQyjCXqlATi2SXrk+o=',
+  'User',
+  'Usuario',
+  'Sistema',
+  'user@sillas3cantos.local',
+  TRUE
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM usuarios
+  WHERE username = 'user' OR email = 'user@sillas3cantos.local'
+);

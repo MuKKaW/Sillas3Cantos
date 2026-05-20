@@ -16,9 +16,9 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
-    public ActionResult<LoginResponseDTO> Login([FromBody] LoginRequestDTO request)
+    public async Task<ActionResult<LoginResponseDTO>> Login([FromBody] LoginRequestDTO request)
     {
-        LoginResponseDTO? response = _authService.Login(request);
+        LoginResponseDTO? response = await _authService.LoginAsync(request);
         if (response is null)
         {
             return Unauthorized("Credenciales invalidas.");
