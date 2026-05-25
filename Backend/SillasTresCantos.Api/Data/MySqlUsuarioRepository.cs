@@ -86,10 +86,13 @@ public class MySqlUsuarioRepository : IUsuarioRepository
         await using MySqlCommand command = connection.CreateCommand();
 
         command.CommandText = """
-                              INSERT INTO usuarios (nombre, apellido, email, fecha_registro, esta_activo)
-                              VALUES (@nombre, @apellido, @email, @fechaRegistro, @estaActivo);
+                              INSERT INTO usuarios (username, password_hash, role, nombre, apellido, email, fecha_registro, esta_activo)
+                              VALUES (@username, @passwordHash, @role, @nombre, @apellido, @email, @fechaRegistro, @estaActivo);
                               SELECT LAST_INSERT_ID();
                               """;
+        command.Parameters.AddWithValue("@username", (object?)usuario.Username ?? DBNull.Value);
+        command.Parameters.AddWithValue("@passwordHash", (object?)usuario.PasswordHash ?? DBNull.Value);
+        command.Parameters.AddWithValue("@role", (object?)usuario.Role ?? DBNull.Value);
         command.Parameters.AddWithValue("@nombre", (object?)usuario.Nombre ?? DBNull.Value);
         command.Parameters.AddWithValue("@apellido", (object?)usuario.Apellido ?? DBNull.Value);
         command.Parameters.AddWithValue("@email", usuario.Email);
@@ -127,13 +130,19 @@ public class MySqlUsuarioRepository : IUsuarioRepository
 
         command.CommandText = """
                               UPDATE usuarios
-                              SET nombre = @nombre,
+                              SET username = COALESCE(@username, username),
+                                  password_hash = COALESCE(@passwordHash, password_hash),
+                                  role = COALESCE(@role, role),
+                                  nombre = @nombre,
                                   apellido = @apellido,
                                   email = @email,
                                   esta_activo = @estaActivo
                               WHERE id = @id;
                               """;
         command.Parameters.AddWithValue("@id", usuario.Id);
+        command.Parameters.AddWithValue("@username", (object?)usuario.Username ?? DBNull.Value);
+        command.Parameters.AddWithValue("@passwordHash", (object?)usuario.PasswordHash ?? DBNull.Value);
+        command.Parameters.AddWithValue("@role", (object?)usuario.Role ?? DBNull.Value);
         command.Parameters.AddWithValue("@nombre", (object?)usuario.Nombre ?? DBNull.Value);
         command.Parameters.AddWithValue("@apellido", (object?)usuario.Apellido ?? DBNull.Value);
         command.Parameters.AddWithValue("@email", usuario.Email);
