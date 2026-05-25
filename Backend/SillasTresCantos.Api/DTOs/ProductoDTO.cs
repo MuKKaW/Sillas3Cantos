@@ -39,6 +39,8 @@ public class GetProductosFiltroDTO
 {
     public int IdProducto { get; set; } = 0;
     public string Nombre { get; set; } = string.Empty;
+    public int CategoriaId { get; set; } = 0;
+    public int MarcaId { get; set; } = 0;
     public bool OrderAscent { get; set; } = true;
     public GetProductosFiltroDTO() { }
 }

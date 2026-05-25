@@ -8,6 +8,7 @@ public enum ProductoOperationError
     Validation,
     Conflict,
     NotFound,
+    RelatedNotFound,
     Unexpected
 }
 
@@ -41,6 +42,12 @@ public class ProductoOperationResult
         new()
         {
             Error = ProductoOperationError.NotFound
+        };
+
+    public static ProductoOperationResult RelatedNotFoundError() =>
+        new()
+        {
+            Error = ProductoOperationError.RelatedNotFound
         };
 
     public static ProductoOperationResult UnexpectedError() =>

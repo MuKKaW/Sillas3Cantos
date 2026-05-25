@@ -19,7 +19,13 @@ public class ProductoService : IProductoService
 
     public async Task<List<GetProductoDTO>> GetProductosAsync(GetProductosFiltroDTO filtro)
     {
-        List<Producto> productos = await _productoRepository.GetProductosAsync(filtro.IdProducto, filtro.Nombre, filtro.OrderAscent);
+        List<Producto> productos = await _productoRepository.GetProductosAsync(
+            filtro.IdProducto,
+            filtro.Nombre,
+            filtro.CategoriaId,
+            filtro.MarcaId,
+            filtro.OrderAscent);
+
         return productos
             .Select(MapToGetProductoDTO)
             .ToList();
@@ -61,7 +67,7 @@ public class ProductoService : IProductoService
 
         if (!categoriaExiste || !marcaExiste)
         {
-            return ProductoOperationResult.ValidationError();
+            return ProductoOperationResult.RelatedNotFoundError();
         }
 
         Producto nuevoProducto = new()
@@ -86,7 +92,7 @@ public class ProductoService : IProductoService
         }
         catch (MySqlException ex) when (IsForeignKeyViolation(ex))
         {
-            return ProductoOperationResult.ValidationError();
+            return ProductoOperationResult.RelatedNotFoundError();
         }
         catch (MySqlException)
         {
@@ -139,6 +145,11 @@ public class ProductoService : IProductoService
             return ProductoOperationResult.ValidationError();
         }
 
+        if (producto.Descripcion is not null && producto.Descripcion.Length > MaxDescripcionLength)
+        {
+            return ProductoOperationResult.ValidationError();
+        }
+
         string nombreFinal = string.IsNullOrWhiteSpace(producto.Nombre)
             ? existente.Nombre
             : producto.Nombre.Trim();
@@ -165,7 +176,7 @@ public class ProductoService : IProductoService
 
         if (!categoriaExiste || !marcaExiste)
         {
-            return ProductoOperationResult.ValidationError();
+            return ProductoOperationResult.RelatedNotFoundError();
         }
 
         Producto actualizado = new()
@@ -190,7 +201,7 @@ public class ProductoService : IProductoService
         }
         catch (MySqlException ex) when (IsForeignKeyViolation(ex))
         {
-            return ProductoOperationResult.ValidationError();
+            return ProductoOperationResult.RelatedNotFoundError();
         }
         catch (MySqlException)
         {

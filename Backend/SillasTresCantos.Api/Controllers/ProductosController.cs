@@ -17,14 +17,22 @@ public class ProductosController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<GetProductoDTO>>> GetProductos([FromQuery] int idProducto = 0, [FromQuery] string nombre = "", [FromQuery] bool orderAsc = true)
+    public async Task<ActionResult<List<GetProductoDTO>>> GetProductos(
+        [FromQuery] int idProducto = 0,
+        [FromQuery] string nombre = "",
+        [FromQuery] int categoriaId = 0,
+        [FromQuery] int marcaId = 0,
+        [FromQuery] bool orderAsc = true)
     {
         GetProductosFiltroDTO filtro = new()
         {
             IdProducto = idProducto,
             Nombre = nombre,
+            CategoriaId = categoriaId,
+            MarcaId = marcaId,
             OrderAscent = orderAsc
         };
+
         List<GetProductoDTO> productos = await _productoService.GetProductosAsync(filtro);
         return Ok(productos);
     }
@@ -51,6 +59,7 @@ public class ProductosController : ControllerBase
             return resultado.Error switch
             {
                 ProductoOperationError.Validation => BadRequest("Los datos del producto no son validos."),
+                ProductoOperationError.RelatedNotFound => BadRequest("La categoria o la marca indicada no existe."),
                 ProductoOperationError.Conflict => Conflict("Existe un conflicto con los datos del producto."),
                 _ => StatusCode(StatusCodes.Status500InternalServerError)
             };
@@ -76,6 +85,7 @@ public class ProductosController : ControllerBase
             ProductoOperationError.None => NoContent(),
             ProductoOperationError.Validation => BadRequest("Los datos del producto no son validos."),
             ProductoOperationError.NotFound => NotFound(),
+            ProductoOperationError.RelatedNotFound => BadRequest("La categoria o la marca indicada no existe."),
             ProductoOperationError.Conflict => Conflict("Existe un conflicto con los datos del producto."),
             _ => StatusCode(StatusCodes.Status500InternalServerError)
         };

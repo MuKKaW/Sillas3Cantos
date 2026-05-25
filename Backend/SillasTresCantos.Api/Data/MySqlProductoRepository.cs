@@ -14,7 +14,7 @@ public class MySqlProductoRepository : IProductoRepository
         _connectionFactory = connectionFactory;
     }
 
-    public async Task<List<Producto>> GetProductosAsync(int idProducto, string nombre, bool orderAscent, CancellationToken cancellationToken = default)
+    public async Task<List<Producto>> GetProductosAsync(int idProducto, string nombre, int categoriaId, int marcaId, bool orderAscent, CancellationToken cancellationToken = default)
     {
         await using MySqlConnection connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
         await using MySqlCommand command = connection.CreateCommand();
@@ -32,6 +32,18 @@ public class MySqlProductoRepository : IProductoRepository
         {
             whereClauses.Add("nombre LIKE @nombre");
             command.Parameters.AddWithValue("@nombre", $"%{nombre}%");
+        }
+
+        if (categoriaId > 0)
+        {
+            whereClauses.Add("categoria_id = @categoriaId");
+            command.Parameters.AddWithValue("@categoriaId", categoriaId);
+        }
+
+        if (marcaId > 0)
+        {
+            whereClauses.Add("marca_id = @marcaId");
+            command.Parameters.AddWithValue("@marcaId", marcaId);
         }
 
         if (whereClauses.Count > 0)
