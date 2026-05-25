@@ -3,6 +3,8 @@ namespace SillasTresCantos.Api.DTOs;
 public class GetUsuarioDTO
 {
     public required int Id { get; set; }
+    public string? Username { get; set; }
+    public string? Role { get; set; }
     public string? Nombre { get; set; }
     public string? Apellido { get; set; }
     public required string Email { get; set; }
@@ -13,6 +15,9 @@ public class GetUsuarioDTO
 
 public class PostUsuarioDTO
 {
+    public required string Username { get; set; }
+    public required string Password { get; set; }
+    public string? Role { get; set; }
     public string? Nombre { get; set; }
     public string? Apellido { get; set; }
     public required string Email { get; set; }
@@ -22,6 +27,9 @@ public class PostUsuarioDTO
 public class PutUsuarioDTO
 {
     public int Id { get; set; }
+    public string? Username { get; set; }
+    public string? Password { get; set; }
+    public string? Role { get; set; }
     public string? Nombre { get; set; }
     public string? Apellido { get; set; }
     public string? Email { get; set; }

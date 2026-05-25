@@ -7,6 +7,8 @@ public enum UsuarioOperationError
     None,
     Validation,
     Conflict,
+    ConflictEmail,
+    ConflictUsername,
     NotFound,
     Unexpected
 }
@@ -35,6 +37,18 @@ public class UsuarioOperationResult
         new()
         {
             Error = UsuarioOperationError.Conflict
+        };
+
+    public static UsuarioOperationResult ConflictEmailError() =>
+        new()
+        {
+            Error = UsuarioOperationError.ConflictEmail
+        };
+
+    public static UsuarioOperationResult ConflictUsernameError() =>
+        new()
+        {
+            Error = UsuarioOperationError.ConflictUsername
         };
 
     public static UsuarioOperationResult NotFoundError() =>
