@@ -42,7 +42,7 @@ public class CategoriasController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     public async Task<ActionResult<GetCategoriaDTO>> PostCategoria([FromBody] PostCategoriaDTO categoria)
     {
         CategoriaOperationResult resultado = await _categoriaService.PostCategoriaAsync(categoria);
@@ -65,7 +65,7 @@ public class CategoriasController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     public async Task<IActionResult> PutCategoria(int id, [FromBody] PutCategoriaDTO categoria)
     {
         categoria.Id = id;
@@ -82,7 +82,7 @@ public class CategoriasController : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     public async Task<IActionResult> DeleteCategoria(int id)
     {
         CategoriaOperationResult resultado = await _categoriaService.DeleteCategoriaAsync(id);

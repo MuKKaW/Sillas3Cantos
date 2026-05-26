@@ -42,7 +42,7 @@ public class MarcasController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     public async Task<ActionResult<GetMarcaDTO>> PostMarca([FromBody] PostMarcaDTO marca)
     {
         MarcaOperationResult resultado = await _marcaService.PostMarcaAsync(marca);
@@ -65,7 +65,7 @@ public class MarcasController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     public async Task<IActionResult> PutMarca(int id, [FromBody] PutMarcaDTO marca)
     {
         marca.Id = id;
@@ -82,7 +82,7 @@ public class MarcasController : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     public async Task<IActionResult> DeleteMarca(int id)
     {
         MarcaOperationResult resultado = await _marcaService.DeleteMarcaAsync(id);

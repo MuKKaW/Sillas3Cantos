@@ -49,7 +49,7 @@ public class AuthService : IAuthService
             return null;
         }
 
-        string role = string.IsNullOrWhiteSpace(user.Role) ? "User" : user.Role;
+        string role = NormalizeRoleClaim(user.Role);
         string claimUserName = user.Username ?? username;
 
         byte[] keyBytes = Encoding.UTF8.GetBytes(_jwtOptions.Key);
@@ -82,5 +82,26 @@ public class AuthService : IAuthService
             ExpiresAtUtc = expires,
             Role = role
         };
+    }
+
+    private static string NormalizeRoleClaim(string? role)
+    {
+        if (string.IsNullOrWhiteSpace(role))
+        {
+            return "User";
+        }
+
+        if (role.Equals("admin", StringComparison.OrdinalIgnoreCase)
+            || role.Equals("superadmin", StringComparison.OrdinalIgnoreCase))
+        {
+            return "SuperAdmin";
+        }
+
+        if (role.Equals("user", StringComparison.OrdinalIgnoreCase))
+        {
+            return "User";
+        }
+
+        return role;
     }
 }

@@ -271,9 +271,10 @@ public class UsuarioService : IUsuarioService
             return defaultRole;
         }
 
-        if (normalized.Equals("admin", StringComparison.OrdinalIgnoreCase))
+        if (normalized.Equals("admin", StringComparison.OrdinalIgnoreCase)
+            || normalized.Equals("superadmin", StringComparison.OrdinalIgnoreCase))
         {
-            return "Admin";
+            return "SuperAdmin";
         }
 
         if (normalized.Equals("user", StringComparison.OrdinalIgnoreCase))
@@ -295,7 +296,7 @@ public class UsuarioService : IUsuarioService
     private static bool IsValidRole(string role) =>
         !string.IsNullOrWhiteSpace(role)
         && role.Length <= MaxRoleLength
-        && (role.Equals("Admin", StringComparison.OrdinalIgnoreCase)
+        && (role.Equals("SuperAdmin", StringComparison.OrdinalIgnoreCase)
             || role.Equals("User", StringComparison.OrdinalIgnoreCase));
 
     private static bool IsValidNombre(string? nombre) =>

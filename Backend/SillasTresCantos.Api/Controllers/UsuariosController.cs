@@ -41,7 +41,7 @@ public class UsuariosController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "SuperAdmin")]
     public async Task<ActionResult<GetUsuarioDTO>> PostUsuario([FromBody] PostUsuarioDTO usuario)
     {
         UsuarioOperationResult resultado = await _usuarioService.PostUsuarioAsync(usuario);
@@ -66,7 +66,7 @@ public class UsuariosController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "SuperAdmin")]
     public async Task<IActionResult> PutUsuario(int id, [FromBody] PutUsuarioDTO usuario)
     {
         usuario.Id = id;
@@ -85,7 +85,7 @@ public class UsuariosController : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "SuperAdmin")]
     public async Task<IActionResult> DeleteUsuario(int id)
     {
         UsuarioOperationResult resultado = await _usuarioService.DeleteUsuarioAsync(id);

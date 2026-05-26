@@ -50,7 +50,7 @@ public class ProductosController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     public async Task<ActionResult<GetProductoDTO>> PostProducto([FromBody] PostProductoDTO producto)
     {
         ProductoOperationResult resultado = await _productoService.PostProductoAsync(producto);
@@ -74,7 +74,7 @@ public class ProductosController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     public async Task<IActionResult> PutProducto(int id, [FromBody] PutProductoDTO producto)
     {
         producto.Id = id;
@@ -92,7 +92,7 @@ public class ProductosController : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     public async Task<IActionResult> DeleteProducto(int id)
     {
         ProductoOperationResult resultado = await _productoService.DeleteProductoAsync(id);

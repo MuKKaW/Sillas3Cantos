@@ -40,7 +40,7 @@ INSERT INTO usuarios (username, password_hash, role, nombre, apellido, email, es
 SELECT
   'admin',
   'PBKDF2-SHA256$100000$BOxduQOU+22ui1uSedMwNA==$yJ1uE3sDP9UDhbm9k+YRBHNzAKuf09CSOBhnC/FBCFU=',
-  'Admin',
+  'SuperAdmin',
   'Administrador',
   'Sistema',
   'admin@sillas3cantos.local',
@@ -50,6 +50,12 @@ WHERE NOT EXISTS (
   FROM usuarios
   WHERE username = 'admin' OR email = 'admin@sillas3cantos.local'
 );
+
+UPDATE usuarios
+SET role = 'SuperAdmin'
+WHERE LOWER(username) = 'admin'
+  AND role IS NOT NULL
+  AND LOWER(role) = 'admin';
 
 INSERT INTO usuarios (username, password_hash, role, nombre, apellido, email, esta_activo)
 SELECT
