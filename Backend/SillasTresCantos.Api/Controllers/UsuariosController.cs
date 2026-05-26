@@ -50,7 +50,9 @@ public class UsuariosController : ControllerBase
             return resultado.Error switch
             {
                 UsuarioOperationError.Validation => BadRequest("Los datos del usuario no son validos."),
-                UsuarioOperationError.Conflict => Conflict("Ya existe un usuario con ese email."),
+                UsuarioOperationError.ConflictEmail => Conflict("Ya existe un usuario con ese email."),
+                UsuarioOperationError.ConflictUsername => Conflict("Ya existe un usuario con ese username."),
+                UsuarioOperationError.Conflict => Conflict("Existe un conflicto con los datos del usuario."),
                 _ => StatusCode(StatusCodes.Status500InternalServerError)
             };
         }
@@ -75,7 +77,9 @@ public class UsuariosController : ControllerBase
             UsuarioOperationError.None => NoContent(),
             UsuarioOperationError.Validation => BadRequest("Los datos de usuario no son validos."),
             UsuarioOperationError.NotFound => NotFound(),
-            UsuarioOperationError.Conflict => Conflict("Ya existe un usuario con ese email."),
+            UsuarioOperationError.ConflictEmail => Conflict("Ya existe un usuario con ese email."),
+            UsuarioOperationError.ConflictUsername => Conflict("Ya existe un usuario con ese username."),
+            UsuarioOperationError.Conflict => Conflict("Existe un conflicto con los datos del usuario."),
             _ => StatusCode(StatusCodes.Status500InternalServerError)
         };
     }
