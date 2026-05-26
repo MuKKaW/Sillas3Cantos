@@ -19,7 +19,7 @@ public class MySqlProductoRepository : IProductoRepository
         await using MySqlConnection connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
         await using MySqlCommand command = connection.CreateCommand();
 
-        StringBuilder sql = new("SELECT id, nombre, descripcion, precio, stock, categoria_id, marca_id FROM productos");
+        StringBuilder sql = new("SELECT id, nombre, descripcion, precio, stock, categoria_id, marca_id, es_visible, fecha_creacion, fecha_actualizacion FROM productos");
         List<string> whereClauses = [];
 
         if (idProducto > 0)
@@ -73,7 +73,7 @@ public class MySqlProductoRepository : IProductoRepository
         await using MySqlCommand command = connection.CreateCommand();
 
         command.CommandText = """
-                              SELECT id, nombre, descripcion, precio, stock, categoria_id, marca_id
+                              SELECT id, nombre, descripcion, precio, stock, categoria_id, marca_id, es_visible, fecha_creacion, fecha_actualizacion
                               FROM productos
                               WHERE id = @id
                               LIMIT 1;
@@ -95,8 +95,8 @@ public class MySqlProductoRepository : IProductoRepository
         await using MySqlCommand command = connection.CreateCommand();
 
         command.CommandText = """
-                              INSERT INTO productos (nombre, descripcion, precio, stock, categoria_id, marca_id)
-                              VALUES (@nombre, @descripcion, @precio, @stock, @categoriaId, @marcaId);
+                              INSERT INTO productos (nombre, descripcion, precio, stock, categoria_id, marca_id, es_visible, fecha_creacion, fecha_actualizacion)
+                              VALUES (@nombre, @descripcion, @precio, @stock, @categoriaId, @marcaId, @esVisible, @fechaCreacion, @fechaActualizacion);
                               SELECT LAST_INSERT_ID();
                               """;
         command.Parameters.AddWithValue("@nombre", producto.Nombre);
@@ -105,6 +105,9 @@ public class MySqlProductoRepository : IProductoRepository
         command.Parameters.AddWithValue("@stock", producto.Stock);
         command.Parameters.AddWithValue("@categoriaId", producto.CategoriaId);
         command.Parameters.AddWithValue("@marcaId", producto.MarcaId);
+        command.Parameters.AddWithValue("@esVisible", producto.EsVisible);
+        command.Parameters.AddWithValue("@fechaCreacion", producto.FechaCreacion);
+        command.Parameters.AddWithValue("@fechaActualizacion", (object?)producto.FechaActualizacion ?? DBNull.Value);
 
         object? newIdRaw = await command.ExecuteScalarAsync(cancellationToken);
         if (newIdRaw is null || newIdRaw is DBNull)
@@ -122,7 +125,10 @@ public class MySqlProductoRepository : IProductoRepository
             Precio = producto.Precio,
             Stock = producto.Stock,
             CategoriaId = producto.CategoriaId,
-            MarcaId = producto.MarcaId
+            MarcaId = producto.MarcaId,
+            EsVisible = producto.EsVisible,
+            FechaCreacion = producto.FechaCreacion,
+            FechaActualizacion = producto.FechaActualizacion
         };
     }
 
@@ -138,7 +144,9 @@ public class MySqlProductoRepository : IProductoRepository
                                   precio = @precio,
                                   stock = @stock,
                                   categoria_id = @categoriaId,
-                                  marca_id = @marcaId
+                                  marca_id = @marcaId,
+                                  es_visible = @esVisible,
+                                  fecha_actualizacion = @fechaActualizacion
                               WHERE id = @id;
                               """;
         command.Parameters.AddWithValue("@id", producto.Id);
@@ -148,6 +156,8 @@ public class MySqlProductoRepository : IProductoRepository
         command.Parameters.AddWithValue("@stock", producto.Stock);
         command.Parameters.AddWithValue("@categoriaId", producto.CategoriaId);
         command.Parameters.AddWithValue("@marcaId", producto.MarcaId);
+        command.Parameters.AddWithValue("@esVisible", producto.EsVisible);
+        command.Parameters.AddWithValue("@fechaActualizacion", (object?)producto.FechaActualizacion ?? DBNull.Value);
 
         int affectedRows = await command.ExecuteNonQueryAsync(cancellationToken);
         return affectedRows > 0;
@@ -205,6 +215,9 @@ public class MySqlProductoRepository : IProductoRepository
         int stockOrdinal = reader.GetOrdinal("stock");
         int categoriaIdOrdinal = reader.GetOrdinal("categoria_id");
         int marcaIdOrdinal = reader.GetOrdinal("marca_id");
+        int esVisibleOrdinal = reader.GetOrdinal("es_visible");
+        int fechaCreacionOrdinal = reader.GetOrdinal("fecha_creacion");
+        int fechaActualizacionOrdinal = reader.GetOrdinal("fecha_actualizacion");
 
         return new Producto
         {
@@ -214,7 +227,10 @@ public class MySqlProductoRepository : IProductoRepository
             Precio = reader.GetDecimal(precioOrdinal),
             Stock = reader.GetInt32(stockOrdinal),
             CategoriaId = reader.GetInt32(categoriaIdOrdinal),
-            MarcaId = reader.GetInt32(marcaIdOrdinal)
+            MarcaId = reader.GetInt32(marcaIdOrdinal),
+            EsVisible = reader.GetBoolean(esVisibleOrdinal),
+            FechaCreacion = reader.GetDateTime(fechaCreacionOrdinal),
+            FechaActualizacion = reader.IsDBNull(fechaActualizacionOrdinal) ? null : reader.GetDateTime(fechaActualizacionOrdinal)
         };
     }
 }

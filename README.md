@@ -69,6 +69,6 @@ El script valida:
 - Gestion de usuarios restringida a `SuperAdmin`.
 
 ## Visibilidad en catalogo
-- `categorias` y `marcas` usan `esVisible`.
+- `productos`, `categorias` y `marcas` usan `esVisible`.
 - Los GET publicos solo devuelven elementos visibles.
 - Para consultar ocultos usa `includeHidden=true` con token JWT valido.

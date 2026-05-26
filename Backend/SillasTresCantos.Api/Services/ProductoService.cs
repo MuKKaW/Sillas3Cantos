@@ -26,6 +26,13 @@ public class ProductoService : IProductoService
             filtro.MarcaId,
             filtro.OrderAscent);
 
+        if (!filtro.IncludeHidden)
+        {
+            productos = productos
+                .Where(producto => producto.EsVisible)
+                .ToList();
+        }
+
         return productos
             .Select(MapToGetProductoDTO)
             .ToList();
@@ -51,6 +58,7 @@ public class ProductoService : IProductoService
     {
         string nombre = producto.Nombre?.Trim() ?? string.Empty;
         string? descripcion = NormalizeOptional(producto.Descripcion);
+        bool esVisible = producto.EsVisible ?? true;
 
         if (!IsValidNombre(nombre)
             || !IsValidDescripcion(descripcion)
@@ -78,7 +86,10 @@ public class ProductoService : IProductoService
             Precio = producto.Precio,
             Stock = producto.Stock,
             CategoriaId = producto.CategoriaId,
-            MarcaId = producto.MarcaId
+            MarcaId = producto.MarcaId,
+            EsVisible = esVisible,
+            FechaCreacion = DateTime.UtcNow,
+            FechaActualizacion = null
         };
 
         Producto? creado;
@@ -160,6 +171,7 @@ public class ProductoService : IProductoService
         int stockFinal = producto.Stock ?? existente.Stock;
         int categoriaIdFinal = producto.CategoriaId ?? existente.CategoriaId;
         int marcaIdFinal = producto.MarcaId ?? existente.MarcaId;
+        bool esVisibleFinal = producto.EsVisible ?? existente.EsVisible;
 
         if (!IsValidNombre(nombreFinal)
             || !IsValidDescripcion(descripcionFinal)
@@ -187,7 +199,10 @@ public class ProductoService : IProductoService
             Precio = precioFinal,
             Stock = stockFinal,
             CategoriaId = categoriaIdFinal,
-            MarcaId = marcaIdFinal
+            MarcaId = marcaIdFinal,
+            EsVisible = esVisibleFinal,
+            FechaCreacion = existente.FechaCreacion,
+            FechaActualizacion = DateTime.UtcNow
         };
 
         bool updated;
@@ -254,7 +269,10 @@ public class ProductoService : IProductoService
             Precio = producto.Precio,
             Stock = producto.Stock,
             CategoriaId = producto.CategoriaId,
-            MarcaId = producto.MarcaId
+            MarcaId = producto.MarcaId,
+            EsVisible = producto.EsVisible,
+            FechaCreacion = producto.FechaCreacion,
+            FechaActualizacion = producto.FechaActualizacion
         };
 
     private static string? NormalizeOptional(string? value)

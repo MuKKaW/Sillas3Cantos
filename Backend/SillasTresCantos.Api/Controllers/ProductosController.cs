@@ -22,15 +22,22 @@ public class ProductosController : ControllerBase
         [FromQuery] string nombre = "",
         [FromQuery] int categoriaId = 0,
         [FromQuery] int marcaId = 0,
-        [FromQuery] bool orderAsc = true)
+        [FromQuery] bool orderAsc = true,
+        [FromQuery] bool includeHidden = false)
     {
+        if (includeHidden && !(User.Identity?.IsAuthenticated ?? false))
+        {
+            return Unauthorized("Debes autenticarte para consultar productos ocultos.");
+        }
+
         GetProductosFiltroDTO filtro = new()
         {
             IdProducto = idProducto,
             Nombre = nombre,
             CategoriaId = categoriaId,
             MarcaId = marcaId,
-            OrderAscent = orderAsc
+            OrderAscent = orderAsc,
+            IncludeHidden = includeHidden
         };
 
         List<GetProductoDTO> productos = await _productoService.GetProductosAsync(filtro);
@@ -38,10 +45,20 @@ public class ProductosController : ControllerBase
     }
 
     [HttpGet("{id:int}")]
-    public async Task<ActionResult<GetProductoDTO>> GetProductoById(int id)
+    public async Task<ActionResult<GetProductoDTO>> GetProductoById(int id, [FromQuery] bool includeHidden = false)
     {
+        if (includeHidden && !(User.Identity?.IsAuthenticated ?? false))
+        {
+            return Unauthorized("Debes autenticarte para consultar productos ocultos.");
+        }
+
         GetProductoDTO? producto = await _productoService.GetProductoByIdAsync(id);
         if (producto is null)
+        {
+            return NotFound();
+        }
+
+        if (!includeHidden && !producto.EsVisible)
         {
             return NotFound();
         }

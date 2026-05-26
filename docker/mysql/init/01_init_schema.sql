@@ -43,6 +43,9 @@ CREATE TABLE IF NOT EXISTS productos (
   stock INT NOT NULL DEFAULT 0,
   categoria_id INT NOT NULL,
   marca_id INT NOT NULL,
+  es_visible BOOLEAN NOT NULL DEFAULT TRUE,
+  fecha_creacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  fecha_actualizacion DATETIME NULL DEFAULT NULL,
   FOREIGN KEY (categoria_id) REFERENCES categorias(id),
   FOREIGN KEY (marca_id) REFERENCES marcas(id)
 );
@@ -209,6 +212,51 @@ SET @sql = IF (
   ),
   'SELECT 1',
   'ALTER TABLE categorias ADD COLUMN fecha_actualizacion DATETIME NULL DEFAULT NULL'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @sql = IF (
+  EXISTS (
+    SELECT 1
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = @schema_name
+      AND TABLE_NAME = 'productos'
+      AND COLUMN_NAME = 'es_visible'
+  ),
+  'SELECT 1',
+  'ALTER TABLE productos ADD COLUMN es_visible BOOLEAN NOT NULL DEFAULT TRUE'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @sql = IF (
+  EXISTS (
+    SELECT 1
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = @schema_name
+      AND TABLE_NAME = 'productos'
+      AND COLUMN_NAME = 'fecha_creacion'
+  ),
+  'SELECT 1',
+  'ALTER TABLE productos ADD COLUMN fecha_creacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @sql = IF (
+  EXISTS (
+    SELECT 1
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = @schema_name
+      AND TABLE_NAME = 'productos'
+      AND COLUMN_NAME = 'fecha_actualizacion'
+  ),
+  'SELECT 1',
+  'ALTER TABLE productos ADD COLUMN fecha_actualizacion DATETIME NULL DEFAULT NULL'
 );
 PREPARE stmt FROM @sql;
 EXECUTE stmt;

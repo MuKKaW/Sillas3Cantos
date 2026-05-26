@@ -9,6 +9,9 @@ public class GetProductoDTO
     public int Stock { get; set; }
     public int CategoriaId { get; set; }
     public int MarcaId { get; set; }
+    public bool EsVisible { get; set; }
+    public DateTime FechaCreacion { get; set; }
+    public DateTime? FechaActualizacion { get; set; }
     public GetProductoDTO() { }
 }
 
@@ -20,6 +23,7 @@ public class PostProductoDTO
     public int Stock { get; set; }
     public int CategoriaId { get; set; }
     public int MarcaId { get; set; }
+    public bool? EsVisible { get; set; }
     public PostProductoDTO() { }
 }
 
@@ -32,6 +36,7 @@ public class PutProductoDTO
     public int? Stock { get; set; }
     public int? CategoriaId { get; set; }
     public int? MarcaId { get; set; }
+    public bool? EsVisible { get; set; }
     public PutProductoDTO() { }
 }
 
@@ -42,5 +47,6 @@ public class GetProductosFiltroDTO
     public int CategoriaId { get; set; } = 0;
     public int MarcaId { get; set; } = 0;
     public bool OrderAscent { get; set; } = true;
+    public bool IncludeHidden { get; set; } = false;
     public GetProductosFiltroDTO() { }
 }

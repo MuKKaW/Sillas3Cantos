@@ -9,5 +9,8 @@ public class Producto
     public int Stock { get; set; }
     public int CategoriaId { get; set; }
     public int MarcaId { get; set; }
+    public bool EsVisible { get; set; }
+    public DateTime FechaCreacion { get; set; }
+    public DateTime? FechaActualizacion { get; set; }
     public Producto() { }
 }
