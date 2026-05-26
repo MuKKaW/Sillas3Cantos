@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS productos (
 INSERT INTO usuarios (username, password_hash, role, nombre, apellido, email, esta_activo)
 SELECT
   'admin',
-  'PBKDF2-SHA256$100000$BOxduQOU+22ui1uSedMwNA==$yJ1uE3sDP9UDhbm9k+YRBHNzAKuf09CSOBhnC/FBCFU=',
+  'PBKDF2-SHA256$100000$ZfVIHyHIJ7Yx3T805k66Rw==$8bBBikXRbnSNk3ph8SypTC+iGdGwtGYiL9woNXKYzY0=',
   'SuperAdmin',
   'Administrador',
   'Sistema',
@@ -60,7 +60,7 @@ WHERE LOWER(username) = 'admin'
 INSERT INTO usuarios (username, password_hash, role, nombre, apellido, email, esta_activo)
 SELECT
   'user',
-  'PBKDF2-SHA256$100000$px02f0IJAnpI/qIyvasWog==$EUWDWTf1VGy6dsYL2t0zgYpIQpQyjCXqlATi2SXrk+o=',
+  'PBKDF2-SHA256$100000$17odRLWuHKkMzlVz8oSMZA==$r6m4fHtZMyZ4N/WPaAYyBys+e1Zo8OXJxEJbY2HBMB0=',
   'User',
   'Usuario',
   'Sistema',
