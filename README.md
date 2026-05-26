@@ -13,6 +13,12 @@
 docker compose up -d --build
 ```
 
+Si ya tenias una base creada y has actualizado el esquema SQL, recrea volumen:
+```powershell
+docker compose down -v
+docker compose up -d --build
+```
+
 Comprobar estado:
 ```powershell
 docker compose ps

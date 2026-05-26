@@ -8,6 +8,9 @@ namespace SillasTresCantos.Api.Services;
 public class MarcaService : IMarcaService
 {
     private const int MaxNombreLength = 100;
+    private const int MaxDescripcionLength = 255;
+    private const int MaxPaisOrigenLength = 100;
+    private const int MinAnioFundacion = 1800;
     private readonly IMarcaRepository _marcaRepository;
 
     public MarcaService(IMarcaRepository marcaRepository)
@@ -42,7 +45,15 @@ public class MarcaService : IMarcaService
     public async Task<MarcaOperationResult> PostMarcaAsync(PostMarcaDTO marca)
     {
         string nombre = marca.Nombre?.Trim() ?? string.Empty;
-        if (!IsValidNombre(nombre))
+        string? descripcion = NormalizeOptional(marca.Descripcion);
+        string? paisOrigen = NormalizeOptional(marca.PaisOrigen);
+        int? anioFundacion = marca.AnioFundacion;
+        bool esVisible = marca.EsVisible ?? true;
+
+        if (!IsValidNombre(nombre)
+            || !IsValidDescripcion(descripcion)
+            || !IsValidPaisOrigen(paisOrigen)
+            || !IsValidAnioFundacion(anioFundacion))
         {
             return MarcaOperationResult.ValidationError();
         }
@@ -56,7 +67,13 @@ public class MarcaService : IMarcaService
         Marca nuevaMarca = new()
         {
             Id = 0,
-            Nombre = nombre
+            Nombre = nombre,
+            Descripcion = descripcion,
+            PaisOrigen = paisOrigen,
+            AnioFundacion = anioFundacion,
+            EsVisible = esVisible,
+            FechaCreacion = DateTime.UtcNow,
+            FechaActualizacion = null
         };
 
         Marca? creada;
@@ -102,8 +119,19 @@ public class MarcaService : IMarcaService
         string nombreFinal = string.IsNullOrWhiteSpace(marca.Nombre)
             ? existente.Nombre
             : marca.Nombre.Trim();
+        string? descripcionFinal = marca.Descripcion is null
+            ? existente.Descripcion
+            : NormalizeOptional(marca.Descripcion);
+        string? paisOrigenFinal = marca.PaisOrigen is null
+            ? existente.PaisOrigen
+            : NormalizeOptional(marca.PaisOrigen);
+        int? anioFundacionFinal = marca.AnioFundacion ?? existente.AnioFundacion;
+        bool esVisibleFinal = marca.EsVisible ?? existente.EsVisible;
 
-        if (!IsValidNombre(nombreFinal))
+        if (!IsValidNombre(nombreFinal)
+            || !IsValidDescripcion(descripcionFinal)
+            || !IsValidPaisOrigen(paisOrigenFinal)
+            || !IsValidAnioFundacion(anioFundacionFinal))
         {
             return MarcaOperationResult.ValidationError();
         }
@@ -117,7 +145,13 @@ public class MarcaService : IMarcaService
         Marca actualizada = new()
         {
             Id = existente.Id,
-            Nombre = nombreFinal
+            Nombre = nombreFinal,
+            Descripcion = descripcionFinal,
+            PaisOrigen = paisOrigenFinal,
+            AnioFundacion = anioFundacionFinal,
+            EsVisible = esVisibleFinal,
+            FechaCreacion = existente.FechaCreacion,
+            FechaActualizacion = DateTime.UtcNow
         };
 
         bool updated;
@@ -162,11 +196,45 @@ public class MarcaService : IMarcaService
         new()
         {
             Id = marca.Id,
-            Nombre = marca.Nombre
+            Nombre = marca.Nombre,
+            Descripcion = marca.Descripcion,
+            PaisOrigen = marca.PaisOrigen,
+            AnioFundacion = marca.AnioFundacion,
+            EsVisible = marca.EsVisible,
+            FechaCreacion = marca.FechaCreacion,
+            FechaActualizacion = marca.FechaActualizacion
         };
 
     private static bool IsValidNombre(string nombre) =>
         !string.IsNullOrWhiteSpace(nombre) && nombre.Length <= MaxNombreLength;
+
+    private static bool IsValidDescripcion(string? descripcion) =>
+        descripcion is null || descripcion.Length <= MaxDescripcionLength;
+
+    private static bool IsValidPaisOrigen(string? paisOrigen) =>
+        paisOrigen is null || paisOrigen.Length <= MaxPaisOrigenLength;
+
+    private static bool IsValidAnioFundacion(int? anioFundacion)
+    {
+        if (!anioFundacion.HasValue)
+        {
+            return true;
+        }
+
+        int maxAnio = DateTime.UtcNow.Year + 1;
+        return anioFundacion.Value >= MinAnioFundacion && anioFundacion.Value <= maxAnio;
+    }
+
+    private static string? NormalizeOptional(string? value)
+    {
+        if (value is null)
+        {
+            return null;
+        }
+
+        string normalized = value.Trim();
+        return normalized.Length == 0 ? null : normalized;
+    }
 
     private static bool IsDuplicateKey(MySqlException ex) => ex.Number == 1062;
 }

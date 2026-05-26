@@ -19,7 +19,7 @@ public class MySqlCategoriaRepository : ICategoriaRepository
         await using MySqlConnection connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
         await using MySqlCommand command = connection.CreateCommand();
 
-        StringBuilder sql = new("SELECT id, nombre FROM categorias");
+        StringBuilder sql = new("SELECT id, nombre, descripcion, orden_visual, es_visible, fecha_creacion, fecha_actualizacion FROM categorias");
         List<string> whereClauses = [];
 
         if (idCategoria > 0)
@@ -61,7 +61,7 @@ public class MySqlCategoriaRepository : ICategoriaRepository
         await using MySqlCommand command = connection.CreateCommand();
 
         command.CommandText = """
-                              SELECT id, nombre
+                              SELECT id, nombre, descripcion, orden_visual, es_visible, fecha_creacion, fecha_actualizacion
                               FROM categorias
                               WHERE id = @id
                               LIMIT 1;
@@ -83,11 +83,16 @@ public class MySqlCategoriaRepository : ICategoriaRepository
         await using MySqlCommand command = connection.CreateCommand();
 
         command.CommandText = """
-                              INSERT INTO categorias (nombre)
-                              VALUES (@nombre);
+                              INSERT INTO categorias (nombre, descripcion, orden_visual, es_visible, fecha_creacion, fecha_actualizacion)
+                              VALUES (@nombre, @descripcion, @ordenVisual, @esVisible, @fechaCreacion, @fechaActualizacion);
                               SELECT LAST_INSERT_ID();
                               """;
         command.Parameters.AddWithValue("@nombre", categoria.Nombre);
+        command.Parameters.AddWithValue("@descripcion", (object?)categoria.Descripcion ?? DBNull.Value);
+        command.Parameters.AddWithValue("@ordenVisual", categoria.OrdenVisual);
+        command.Parameters.AddWithValue("@esVisible", categoria.EsVisible);
+        command.Parameters.AddWithValue("@fechaCreacion", categoria.FechaCreacion);
+        command.Parameters.AddWithValue("@fechaActualizacion", (object?)categoria.FechaActualizacion ?? DBNull.Value);
 
         object? newIdRaw = await command.ExecuteScalarAsync(cancellationToken);
         if (newIdRaw is null || newIdRaw is DBNull)
@@ -100,7 +105,12 @@ public class MySqlCategoriaRepository : ICategoriaRepository
         return new Categoria
         {
             Id = newId,
-            Nombre = categoria.Nombre
+            Nombre = categoria.Nombre,
+            Descripcion = categoria.Descripcion,
+            OrdenVisual = categoria.OrdenVisual,
+            EsVisible = categoria.EsVisible,
+            FechaCreacion = categoria.FechaCreacion,
+            FechaActualizacion = categoria.FechaActualizacion
         };
     }
 
@@ -111,11 +121,19 @@ public class MySqlCategoriaRepository : ICategoriaRepository
 
         command.CommandText = """
                               UPDATE categorias
-                              SET nombre = @nombre
+                              SET nombre = @nombre,
+                                  descripcion = @descripcion,
+                                  orden_visual = @ordenVisual,
+                                  es_visible = @esVisible,
+                                  fecha_actualizacion = @fechaActualizacion
                               WHERE id = @id;
                               """;
         command.Parameters.AddWithValue("@id", categoria.Id);
         command.Parameters.AddWithValue("@nombre", categoria.Nombre);
+        command.Parameters.AddWithValue("@descripcion", (object?)categoria.Descripcion ?? DBNull.Value);
+        command.Parameters.AddWithValue("@ordenVisual", categoria.OrdenVisual);
+        command.Parameters.AddWithValue("@esVisible", categoria.EsVisible);
+        command.Parameters.AddWithValue("@fechaActualizacion", (object?)categoria.FechaActualizacion ?? DBNull.Value);
 
         int affectedRows = await command.ExecuteNonQueryAsync(cancellationToken);
         return affectedRows > 0;
@@ -162,11 +180,21 @@ public class MySqlCategoriaRepository : ICategoriaRepository
     {
         int idOrdinal = reader.GetOrdinal("id");
         int nombreOrdinal = reader.GetOrdinal("nombre");
+        int descripcionOrdinal = reader.GetOrdinal("descripcion");
+        int ordenVisualOrdinal = reader.GetOrdinal("orden_visual");
+        int esVisibleOrdinal = reader.GetOrdinal("es_visible");
+        int fechaCreacionOrdinal = reader.GetOrdinal("fecha_creacion");
+        int fechaActualizacionOrdinal = reader.GetOrdinal("fecha_actualizacion");
 
         return new Categoria
         {
             Id = reader.GetInt32(idOrdinal),
-            Nombre = reader.GetString(nombreOrdinal)
+            Nombre = reader.GetString(nombreOrdinal),
+            Descripcion = reader.IsDBNull(descripcionOrdinal) ? null : reader.GetString(descripcionOrdinal),
+            OrdenVisual = reader.GetInt32(ordenVisualOrdinal),
+            EsVisible = reader.GetBoolean(esVisibleOrdinal),
+            FechaCreacion = reader.GetDateTime(fechaCreacionOrdinal),
+            FechaActualizacion = reader.IsDBNull(fechaActualizacionOrdinal) ? null : reader.GetDateTime(fechaActualizacionOrdinal)
         };
     }
 }

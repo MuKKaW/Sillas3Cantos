@@ -8,6 +8,8 @@ namespace SillasTresCantos.Api.Services;
 public class CategoriaService : ICategoriaService
 {
     private const int MaxNombreLength = 100;
+    private const int MaxDescripcionLength = 255;
+    private const int MaxOrdenVisual = 9999;
     private readonly ICategoriaRepository _categoriaRepository;
 
     public CategoriaService(ICategoriaRepository categoriaRepository)
@@ -42,7 +44,13 @@ public class CategoriaService : ICategoriaService
     public async Task<CategoriaOperationResult> PostCategoriaAsync(PostCategoriaDTO categoria)
     {
         string nombre = categoria.Nombre?.Trim() ?? string.Empty;
-        if (!IsValidNombre(nombre))
+        string? descripcion = NormalizeOptional(categoria.Descripcion);
+        int ordenVisual = categoria.OrdenVisual ?? 0;
+        bool esVisible = categoria.EsVisible ?? true;
+
+        if (!IsValidNombre(nombre)
+            || !IsValidDescripcion(descripcion)
+            || !IsValidOrdenVisual(ordenVisual))
         {
             return CategoriaOperationResult.ValidationError();
         }
@@ -56,7 +64,12 @@ public class CategoriaService : ICategoriaService
         Categoria nuevaCategoria = new()
         {
             Id = 0,
-            Nombre = nombre
+            Nombre = nombre,
+            Descripcion = descripcion,
+            OrdenVisual = ordenVisual,
+            EsVisible = esVisible,
+            FechaCreacion = DateTime.UtcNow,
+            FechaActualizacion = null
         };
 
         Categoria? creada;
@@ -102,8 +115,15 @@ public class CategoriaService : ICategoriaService
         string nombreFinal = string.IsNullOrWhiteSpace(categoria.Nombre)
             ? existente.Nombre
             : categoria.Nombre.Trim();
+        string? descripcionFinal = categoria.Descripcion is null
+            ? existente.Descripcion
+            : NormalizeOptional(categoria.Descripcion);
+        int ordenVisualFinal = categoria.OrdenVisual ?? existente.OrdenVisual;
+        bool esVisibleFinal = categoria.EsVisible ?? existente.EsVisible;
 
-        if (!IsValidNombre(nombreFinal))
+        if (!IsValidNombre(nombreFinal)
+            || !IsValidDescripcion(descripcionFinal)
+            || !IsValidOrdenVisual(ordenVisualFinal))
         {
             return CategoriaOperationResult.ValidationError();
         }
@@ -117,7 +137,12 @@ public class CategoriaService : ICategoriaService
         Categoria actualizada = new()
         {
             Id = existente.Id,
-            Nombre = nombreFinal
+            Nombre = nombreFinal,
+            Descripcion = descripcionFinal,
+            OrdenVisual = ordenVisualFinal,
+            EsVisible = esVisibleFinal,
+            FechaCreacion = existente.FechaCreacion,
+            FechaActualizacion = DateTime.UtcNow
         };
 
         bool updated;
@@ -162,11 +187,33 @@ public class CategoriaService : ICategoriaService
         new()
         {
             Id = categoria.Id,
-            Nombre = categoria.Nombre
+            Nombre = categoria.Nombre,
+            Descripcion = categoria.Descripcion,
+            OrdenVisual = categoria.OrdenVisual,
+            EsVisible = categoria.EsVisible,
+            FechaCreacion = categoria.FechaCreacion,
+            FechaActualizacion = categoria.FechaActualizacion
         };
 
     private static bool IsValidNombre(string nombre) =>
         !string.IsNullOrWhiteSpace(nombre) && nombre.Length <= MaxNombreLength;
+
+    private static bool IsValidDescripcion(string? descripcion) =>
+        descripcion is null || descripcion.Length <= MaxDescripcionLength;
+
+    private static bool IsValidOrdenVisual(int ordenVisual) =>
+        ordenVisual >= 0 && ordenVisual <= MaxOrdenVisual;
+
+    private static string? NormalizeOptional(string? value)
+    {
+        if (value is null)
+        {
+            return null;
+        }
+
+        string normalized = value.Trim();
+        return normalized.Length == 0 ? null : normalized;
+    }
 
     private static bool IsDuplicateKey(MySqlException ex) => ex.Number == 1062;
 }

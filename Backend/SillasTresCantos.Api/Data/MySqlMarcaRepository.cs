@@ -19,7 +19,7 @@ public class MySqlMarcaRepository : IMarcaRepository
         await using MySqlConnection connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
         await using MySqlCommand command = connection.CreateCommand();
 
-        StringBuilder sql = new("SELECT id, nombre FROM marcas");
+        StringBuilder sql = new("SELECT id, nombre, descripcion, pais_origen, anio_fundacion, es_visible, fecha_creacion, fecha_actualizacion FROM marcas");
         List<string> whereClauses = [];
 
         if (idMarca > 0)
@@ -61,7 +61,7 @@ public class MySqlMarcaRepository : IMarcaRepository
         await using MySqlCommand command = connection.CreateCommand();
 
         command.CommandText = """
-                              SELECT id, nombre
+                              SELECT id, nombre, descripcion, pais_origen, anio_fundacion, es_visible, fecha_creacion, fecha_actualizacion
                               FROM marcas
                               WHERE id = @id
                               LIMIT 1;
@@ -83,11 +83,17 @@ public class MySqlMarcaRepository : IMarcaRepository
         await using MySqlCommand command = connection.CreateCommand();
 
         command.CommandText = """
-                              INSERT INTO marcas (nombre)
-                              VALUES (@nombre);
+                              INSERT INTO marcas (nombre, descripcion, pais_origen, anio_fundacion, es_visible, fecha_creacion, fecha_actualizacion)
+                              VALUES (@nombre, @descripcion, @paisOrigen, @anioFundacion, @esVisible, @fechaCreacion, @fechaActualizacion);
                               SELECT LAST_INSERT_ID();
                               """;
         command.Parameters.AddWithValue("@nombre", marca.Nombre);
+        command.Parameters.AddWithValue("@descripcion", (object?)marca.Descripcion ?? DBNull.Value);
+        command.Parameters.AddWithValue("@paisOrigen", (object?)marca.PaisOrigen ?? DBNull.Value);
+        command.Parameters.AddWithValue("@anioFundacion", (object?)marca.AnioFundacion ?? DBNull.Value);
+        command.Parameters.AddWithValue("@esVisible", marca.EsVisible);
+        command.Parameters.AddWithValue("@fechaCreacion", marca.FechaCreacion);
+        command.Parameters.AddWithValue("@fechaActualizacion", (object?)marca.FechaActualizacion ?? DBNull.Value);
 
         object? newIdRaw = await command.ExecuteScalarAsync(cancellationToken);
         if (newIdRaw is null || newIdRaw is DBNull)
@@ -100,7 +106,13 @@ public class MySqlMarcaRepository : IMarcaRepository
         return new Marca
         {
             Id = newId,
-            Nombre = marca.Nombre
+            Nombre = marca.Nombre,
+            Descripcion = marca.Descripcion,
+            PaisOrigen = marca.PaisOrigen,
+            AnioFundacion = marca.AnioFundacion,
+            EsVisible = marca.EsVisible,
+            FechaCreacion = marca.FechaCreacion,
+            FechaActualizacion = marca.FechaActualizacion
         };
     }
 
@@ -111,11 +123,21 @@ public class MySqlMarcaRepository : IMarcaRepository
 
         command.CommandText = """
                               UPDATE marcas
-                              SET nombre = @nombre
+                              SET nombre = @nombre,
+                                  descripcion = @descripcion,
+                                  pais_origen = @paisOrigen,
+                                  anio_fundacion = @anioFundacion,
+                                  es_visible = @esVisible,
+                                  fecha_actualizacion = @fechaActualizacion
                               WHERE id = @id;
                               """;
         command.Parameters.AddWithValue("@id", marca.Id);
         command.Parameters.AddWithValue("@nombre", marca.Nombre);
+        command.Parameters.AddWithValue("@descripcion", (object?)marca.Descripcion ?? DBNull.Value);
+        command.Parameters.AddWithValue("@paisOrigen", (object?)marca.PaisOrigen ?? DBNull.Value);
+        command.Parameters.AddWithValue("@anioFundacion", (object?)marca.AnioFundacion ?? DBNull.Value);
+        command.Parameters.AddWithValue("@esVisible", marca.EsVisible);
+        command.Parameters.AddWithValue("@fechaActualizacion", (object?)marca.FechaActualizacion ?? DBNull.Value);
 
         int affectedRows = await command.ExecuteNonQueryAsync(cancellationToken);
         return affectedRows > 0;
@@ -162,11 +184,23 @@ public class MySqlMarcaRepository : IMarcaRepository
     {
         int idOrdinal = reader.GetOrdinal("id");
         int nombreOrdinal = reader.GetOrdinal("nombre");
+        int descripcionOrdinal = reader.GetOrdinal("descripcion");
+        int paisOrigenOrdinal = reader.GetOrdinal("pais_origen");
+        int anioFundacionOrdinal = reader.GetOrdinal("anio_fundacion");
+        int esVisibleOrdinal = reader.GetOrdinal("es_visible");
+        int fechaCreacionOrdinal = reader.GetOrdinal("fecha_creacion");
+        int fechaActualizacionOrdinal = reader.GetOrdinal("fecha_actualizacion");
 
         return new Marca
         {
             Id = reader.GetInt32(idOrdinal),
-            Nombre = reader.GetString(nombreOrdinal)
+            Nombre = reader.GetString(nombreOrdinal),
+            Descripcion = reader.IsDBNull(descripcionOrdinal) ? null : reader.GetString(descripcionOrdinal),
+            PaisOrigen = reader.IsDBNull(paisOrigenOrdinal) ? null : reader.GetString(paisOrigenOrdinal),
+            AnioFundacion = reader.IsDBNull(anioFundacionOrdinal) ? null : reader.GetInt32(anioFundacionOrdinal),
+            EsVisible = reader.GetBoolean(esVisibleOrdinal),
+            FechaCreacion = reader.GetDateTime(fechaCreacionOrdinal),
+            FechaActualizacion = reader.IsDBNull(fechaActualizacionOrdinal) ? null : reader.GetDateTime(fechaActualizacionOrdinal)
         };
     }
 }
