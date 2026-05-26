@@ -17,23 +17,43 @@ public class CategoriasController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<GetCategoriaDTO>>> GetCategorias([FromQuery] int idCategoria = 0, [FromQuery] string nombre = "", [FromQuery] bool orderAsc = true)
+    public async Task<ActionResult<List<GetCategoriaDTO>>> GetCategorias(
+        [FromQuery] int idCategoria = 0,
+        [FromQuery] string nombre = "",
+        [FromQuery] bool orderAsc = true,
+        [FromQuery] bool includeHidden = false)
     {
+        if (includeHidden && !(User.Identity?.IsAuthenticated ?? false))
+        {
+            return Unauthorized("Debes autenticarte para consultar categorias ocultas.");
+        }
+
         GetCategoriasFiltroDTO filtro = new()
         {
             IdCategoria = idCategoria,
             Nombre = nombre,
-            OrderAscent = orderAsc
+            OrderAscent = orderAsc,
+            IncludeHidden = includeHidden
         };
         List<GetCategoriaDTO> categorias = await _categoriaService.GetCategoriasAsync(filtro);
         return Ok(categorias);
     }
 
     [HttpGet("{id:int}")]
-    public async Task<ActionResult<GetCategoriaDTO>> GetCategoriaById(int id)
+    public async Task<ActionResult<GetCategoriaDTO>> GetCategoriaById(int id, [FromQuery] bool includeHidden = false)
     {
+        if (includeHidden && !(User.Identity?.IsAuthenticated ?? false))
+        {
+            return Unauthorized("Debes autenticarte para consultar categorias ocultas.");
+        }
+
         GetCategoriaDTO? categoria = await _categoriaService.GetCategoriaByIdAsync(id);
         if (categoria is null)
+        {
+            return NotFound();
+        }
+
+        if (!includeHidden && !categoria.EsVisible)
         {
             return NotFound();
         }

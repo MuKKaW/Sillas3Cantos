@@ -39,5 +39,6 @@ public class GetMarcasFiltroDTO
     public int IdMarca { get; set; } = 0;
     public string Nombre { get; set; } = "";
     public bool OrderAscent { get; set; } = true;
+    public bool IncludeHidden { get; set; } = false;
     public GetMarcasFiltroDTO() { }
 }

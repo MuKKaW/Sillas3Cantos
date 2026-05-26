@@ -67,3 +67,8 @@ El script valida:
 - GET publicos sin login.
 - POST/PUT/DELETE protegidos en catalogo para usuarios autenticados.
 - Gestion de usuarios restringida a `SuperAdmin`.
+
+## Visibilidad en catalogo
+- `categorias` y `marcas` usan `esVisible`.
+- Los GET publicos solo devuelven elementos visibles.
+- Para consultar ocultos usa `includeHidden=true` con token JWT valido.

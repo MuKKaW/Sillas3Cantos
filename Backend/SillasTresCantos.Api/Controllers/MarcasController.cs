@@ -17,23 +17,43 @@ public class MarcasController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<GetMarcaDTO>>> GetMarcas([FromQuery] int idMarca = 0, [FromQuery] string nombre = "", [FromQuery] bool orderAsc = true)
+    public async Task<ActionResult<List<GetMarcaDTO>>> GetMarcas(
+        [FromQuery] int idMarca = 0,
+        [FromQuery] string nombre = "",
+        [FromQuery] bool orderAsc = true,
+        [FromQuery] bool includeHidden = false)
     {
+        if (includeHidden && !(User.Identity?.IsAuthenticated ?? false))
+        {
+            return Unauthorized("Debes autenticarte para consultar marcas ocultas.");
+        }
+
         GetMarcasFiltroDTO filtro = new()
         {
             IdMarca = idMarca,
             Nombre = nombre,
-            OrderAscent = orderAsc
+            OrderAscent = orderAsc,
+            IncludeHidden = includeHidden
         };
         List<GetMarcaDTO> marcas = await _marcaService.GetMarcasAsync(filtro);
         return Ok(marcas);
     }
 
     [HttpGet("{id:int}")]
-    public async Task<ActionResult<GetMarcaDTO>> GetMarcaById(int id)
+    public async Task<ActionResult<GetMarcaDTO>> GetMarcaById(int id, [FromQuery] bool includeHidden = false)
     {
+        if (includeHidden && !(User.Identity?.IsAuthenticated ?? false))
+        {
+            return Unauthorized("Debes autenticarte para consultar marcas ocultas.");
+        }
+
         GetMarcaDTO? marca = await _marcaService.GetMarcaByIdAsync(id);
         if (marca is null)
+        {
+            return NotFound();
+        }
+
+        if (!includeHidden && !marca.EsVisible)
         {
             return NotFound();
         }

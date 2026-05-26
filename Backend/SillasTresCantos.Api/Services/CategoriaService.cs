@@ -20,6 +20,14 @@ public class CategoriaService : ICategoriaService
     public async Task<List<GetCategoriaDTO>> GetCategoriasAsync(GetCategoriasFiltroDTO filtro)
     {
         List<Categoria> categorias = await _categoriaRepository.GetCategoriasAsync(filtro.IdCategoria, filtro.Nombre, filtro.OrderAscent);
+
+        if (!filtro.IncludeHidden)
+        {
+            categorias = categorias
+                .Where(categoria => categoria.EsVisible)
+                .ToList();
+        }
+
         return categorias
             .Select(MapToGetCategoriaDTO)
             .ToList();

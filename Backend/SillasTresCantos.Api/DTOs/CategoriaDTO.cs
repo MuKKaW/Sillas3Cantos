@@ -36,5 +36,6 @@ public class GetCategoriasFiltroDTO
     public int IdCategoria { get; set; } = 0;
     public string Nombre { get; set; } = string.Empty;
     public bool OrderAscent { get; set; } = true;
+    public bool IncludeHidden { get; set; } = false;
     public GetCategoriasFiltroDTO() { }
 }

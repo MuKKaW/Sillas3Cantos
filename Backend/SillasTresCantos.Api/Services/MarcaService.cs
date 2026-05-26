@@ -21,6 +21,14 @@ public class MarcaService : IMarcaService
     public async Task<List<GetMarcaDTO>> GetMarcasAsync(GetMarcasFiltroDTO filtro)
     {
         List<Marca> marcas = await _marcaRepository.GetMarcasAsync(filtro.IdMarca, filtro.Nombre, filtro.OrderAscent);
+
+        if (!filtro.IncludeHidden)
+        {
+            marcas = marcas
+                .Where(marca => marca.EsVisible)
+                .ToList();
+        }
+
         return marcas
             .Select(MapToGetMarcaDTO)
             .ToList();
