@@ -24,6 +24,7 @@ public class ProductoService : IProductoService
             filtro.Nombre,
             filtro.CategoriaId,
             filtro.MarcaId,
+            filtro.CreadoPorUsuarioId,
             filtro.OrderAscent);
 
         if (!filtro.IncludeHidden)
@@ -54,7 +55,7 @@ public class ProductoService : IProductoService
         return MapToGetProductoDTO(existente);
     }
 
-    public async Task<ProductoOperationResult> PostProductoAsync(PostProductoDTO producto)
+    public async Task<ProductoOperationResult> PostProductoAsync(PostProductoDTO producto, int creadoPorUsuarioId)
     {
         string nombre = producto.Nombre?.Trim() ?? string.Empty;
         string? descripcion = NormalizeOptional(producto.Descripcion);
@@ -64,6 +65,7 @@ public class ProductoService : IProductoService
             || !IsValidDescripcion(descripcion)
             || !IsValidPrecio(producto.Precio)
             || !IsValidStock(producto.Stock)
+            || !IsValidForeignId(creadoPorUsuarioId)
             || !IsValidForeignId(producto.CategoriaId)
             || !IsValidForeignId(producto.MarcaId))
         {
@@ -87,6 +89,7 @@ public class ProductoService : IProductoService
             Stock = producto.Stock,
             CategoriaId = producto.CategoriaId,
             MarcaId = producto.MarcaId,
+            CreadoPorUsuarioId = creadoPorUsuarioId,
             EsVisible = esVisible,
             FechaCreacion = DateTime.UtcNow,
             FechaActualizacion = null
@@ -200,6 +203,7 @@ public class ProductoService : IProductoService
             Stock = stockFinal,
             CategoriaId = categoriaIdFinal,
             MarcaId = marcaIdFinal,
+            CreadoPorUsuarioId = existente.CreadoPorUsuarioId,
             EsVisible = esVisibleFinal,
             FechaCreacion = existente.FechaCreacion,
             FechaActualizacion = DateTime.UtcNow
@@ -270,6 +274,7 @@ public class ProductoService : IProductoService
             Stock = producto.Stock,
             CategoriaId = producto.CategoriaId,
             MarcaId = producto.MarcaId,
+            CreadoPorUsuarioId = producto.CreadoPorUsuarioId,
             EsVisible = producto.EsVisible,
             FechaCreacion = producto.FechaCreacion,
             FechaActualizacion = producto.FechaActualizacion

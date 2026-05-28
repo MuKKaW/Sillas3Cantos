@@ -43,14 +43,69 @@ CREATE TABLE IF NOT EXISTS productos (
   stock INT NOT NULL DEFAULT 0,
   categoria_id INT NOT NULL,
   marca_id INT NOT NULL,
+  creado_por_usuario_id INT NULL,
   es_visible BOOLEAN NOT NULL DEFAULT TRUE,
   fecha_creacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   fecha_actualizacion DATETIME NULL DEFAULT NULL,
   FOREIGN KEY (categoria_id) REFERENCES categorias(id),
-  FOREIGN KEY (marca_id) REFERENCES marcas(id)
+  FOREIGN KEY (marca_id) REFERENCES marcas(id),
+  CONSTRAINT fk_productos_creado_por_usuario FOREIGN KEY (creado_por_usuario_id) REFERENCES usuarios(id)
 );
 
 SET @schema_name = DATABASE();
+
+SET @sql = IF (
+  EXISTS (
+    SELECT 1
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = @schema_name
+      AND TABLE_NAME = 'productos'
+      AND COLUMN_NAME = 'creado_por_usuario_id'
+  ),
+  'SELECT 1',
+  'ALTER TABLE productos ADD COLUMN creado_por_usuario_id INT NULL AFTER marca_id'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @sql = IF (
+  EXISTS (
+    SELECT 1
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = @schema_name
+      AND TABLE_NAME = 'productos'
+      AND COLUMN_NAME = 'usuario_id'
+  )
+  AND EXISTS (
+    SELECT 1
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = @schema_name
+      AND TABLE_NAME = 'productos'
+      AND COLUMN_NAME = 'creado_por_usuario_id'
+  ),
+  'UPDATE productos SET creado_por_usuario_id = COALESCE(creado_por_usuario_id, usuario_id)',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @sql = IF (
+  EXISTS (
+    SELECT 1
+    FROM information_schema.TABLE_CONSTRAINTS
+    WHERE CONSTRAINT_SCHEMA = @schema_name
+      AND TABLE_NAME = 'productos'
+      AND CONSTRAINT_NAME = 'fk_productos_creado_por_usuario'
+      AND CONSTRAINT_TYPE = 'FOREIGN KEY'
+  ),
+  'SELECT 1',
+  'ALTER TABLE productos ADD CONSTRAINT fk_productos_creado_por_usuario FOREIGN KEY (creado_por_usuario_id) REFERENCES usuarios(id)'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 SET @sql = IF (
   EXISTS (

@@ -60,6 +60,7 @@ public class AuthService : IAuthService
             new(JwtRegisteredClaimNames.Sub, claimUserName),
             new(JwtRegisteredClaimNames.UniqueName, claimUserName),
             new(ClaimTypes.Name, claimUserName),
+            new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(ClaimTypes.Role, role),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         ];

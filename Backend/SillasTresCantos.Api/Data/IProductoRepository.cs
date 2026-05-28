@@ -4,7 +4,7 @@ namespace SillasTresCantos.Api.Data;
 
 public interface IProductoRepository
 {
-    Task<List<Producto>> GetProductosAsync(int idProducto, string nombre, int categoriaId, int marcaId, bool orderAscent, CancellationToken cancellationToken = default);
+    Task<List<Producto>> GetProductosAsync(int idProducto, string nombre, int categoriaId, int marcaId, int creadoPorUsuarioId, bool orderAscent, CancellationToken cancellationToken = default);
     Task<Producto?> GetProductoByIdAsync(int id, CancellationToken cancellationToken = default);
     Task<Producto?> CreateProductoAsync(Producto producto, CancellationToken cancellationToken = default);
     Task<bool> UpdateProductoAsync(Producto producto, CancellationToken cancellationToken = default);

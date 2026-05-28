@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using SillasTresCantos.Api.DTOs;
 using SillasTresCantos.Api.Services;
 
@@ -44,6 +45,51 @@ public class ProductosController : ControllerBase
         return Ok(productos);
     }
 
+    [HttpGet("mios")]
+    [Authorize]
+    public async Task<ActionResult<List<GetProductoDTO>>> GetMisProductos(
+        [FromQuery] bool orderAsc = true,
+        [FromQuery] bool includeHidden = true)
+    {
+        if (!TryGetUsuarioAutenticadoId(out int usuarioId))
+        {
+            return Unauthorized("No se pudo identificar al usuario autenticado. Vuelve a iniciar sesion.");
+        }
+
+        GetProductosFiltroDTO filtro = new()
+        {
+            CreadoPorUsuarioId = usuarioId,
+            OrderAscent = orderAsc,
+            IncludeHidden = includeHidden
+        };
+
+        List<GetProductoDTO> productos = await _productoService.GetProductosAsync(filtro);
+        return Ok(productos);
+    }
+
+    [HttpGet("usuario/{usuarioId:int}")]
+    [Authorize(Roles = "SuperAdmin")]
+    public async Task<ActionResult<List<GetProductoDTO>>> GetProductosPorUsuario(
+        int usuarioId,
+        [FromQuery] bool orderAsc = true,
+        [FromQuery] bool includeHidden = true)
+    {
+        if (usuarioId <= 0)
+        {
+            return BadRequest("El identificador de usuario no es valido.");
+        }
+
+        GetProductosFiltroDTO filtro = new()
+        {
+            CreadoPorUsuarioId = usuarioId,
+            OrderAscent = orderAsc,
+            IncludeHidden = includeHidden
+        };
+
+        List<GetProductoDTO> productos = await _productoService.GetProductosAsync(filtro);
+        return Ok(productos);
+    }
+
     [HttpGet("{id:int}")]
     public async Task<ActionResult<GetProductoDTO>> GetProductoById(int id, [FromQuery] bool includeHidden = false)
     {
@@ -70,7 +116,12 @@ public class ProductosController : ControllerBase
     [Authorize]
     public async Task<ActionResult<GetProductoDTO>> PostProducto([FromBody] PostProductoDTO producto)
     {
-        ProductoOperationResult resultado = await _productoService.PostProductoAsync(producto);
+        if (!TryGetUsuarioAutenticadoId(out int usuarioId))
+        {
+            return Unauthorized("No se pudo identificar al usuario autenticado. Vuelve a iniciar sesion.");
+        }
+
+        ProductoOperationResult resultado = await _productoService.PostProductoAsync(producto, usuarioId);
         if (!resultado.IsSuccess)
         {
             return resultado.Error switch
@@ -122,5 +173,11 @@ public class ProductosController : ControllerBase
             ProductoOperationError.Conflict => Conflict("No se puede eliminar el producto porque tiene datos relacionados."),
             _ => StatusCode(StatusCodes.Status500InternalServerError)
         };
+    }
+
+    private bool TryGetUsuarioAutenticadoId(out int usuarioId)
+    {
+        string? claimId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        return int.TryParse(claimId, out usuarioId) && usuarioId > 0;
     }
 }
