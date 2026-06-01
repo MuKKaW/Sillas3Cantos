@@ -52,6 +52,20 @@ CREATE TABLE IF NOT EXISTS productos (
   CONSTRAINT fk_productos_creado_por_usuario FOREIGN KEY (creado_por_usuario_id) REFERENCES usuarios(id)
 );
 
+CREATE TABLE IF NOT EXISTS producto_archivos (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  producto_id INT NOT NULL,
+  subido_por_usuario_id INT NULL,
+  nombre_original VARCHAR(255) NOT NULL,
+  nombre_almacenado VARCHAR(255) NOT NULL,
+  ruta_relativa VARCHAR(500) NOT NULL,
+  content_type VARCHAR(150) NOT NULL,
+  tamano_bytes BIGINT NOT NULL,
+  fecha_subida DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_producto_archivos_producto FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE CASCADE,
+  CONSTRAINT fk_producto_archivos_usuario FOREIGN KEY (subido_por_usuario_id) REFERENCES usuarios(id) ON DELETE SET NULL
+);
+
 SET @schema_name = DATABASE();
 
 SET @sql = IF (
