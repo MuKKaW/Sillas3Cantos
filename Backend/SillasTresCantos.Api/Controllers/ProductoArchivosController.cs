@@ -124,7 +124,20 @@ public class ProductoArchivosController : ControllerBase
 
     private bool TryGetUsuarioAutenticadoId(out int usuarioId)
     {
-        string? claimId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        return int.TryParse(claimId, out usuarioId) && usuarioId > 0;
+        List<string> claimValues = User.Claims
+            .Where(claim => claim.Type == ClaimTypes.NameIdentifier || claim.Type == "nameid")
+            .Select(claim => claim.Value)
+            .ToList();
+
+        foreach (string value in claimValues)
+        {
+            if (int.TryParse(value, out usuarioId) && usuarioId > 0)
+            {
+                return true;
+            }
+        }
+
+        usuarioId = 0;
+        return false;
     }
 }
