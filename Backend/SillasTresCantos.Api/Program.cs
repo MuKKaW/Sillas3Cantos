@@ -2,6 +2,7 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
 using SillasTresCantos.Api.Configuration;
 using SillasTresCantos.Api.Data;
 using SillasTresCantos.Api.Services;
@@ -72,7 +73,24 @@ builder.Services
 
 builder.Services.AddAuthorization();
 
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.ApiKey,
+        In = ParameterLocation.Header,
+        Description = "Introduce el token JWT. Ejemplo: Bearer eyJhbGciOi..."
+    });
+
+    options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecuritySchemeReference("Bearer", document, null),
+            []
+        }
+    });
+});
 
 var app = builder.Build();
 
