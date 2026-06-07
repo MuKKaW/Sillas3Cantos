@@ -70,9 +70,10 @@ public class ProductoArchivosController : ControllerBase
 
     [HttpPost]
     [Authorize]
+    [Consumes("multipart/form-data")]
     public async Task<ActionResult<GetProductoArchivoDTO>> UploadArchivo(
         int productoId,
-        [FromForm] IFormFile archivo,
+        IFormFile archivo,
         CancellationToken cancellationToken = default)
     {
         if (!TryGetUsuarioAutenticadoId(out int usuarioId))
