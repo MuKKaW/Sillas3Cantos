@@ -1,0 +1,38 @@
+.login-wrap {
+  margin-top: 2rem;
+  display: grid;
+  grid-template-columns: 1.25fr 1fr;
+  gap: 1rem;
+  background:
+    linear-gradient(140deg, rgba(243, 207, 86, 0.13), rgba(136, 166, 255, 0.09)),
+    color-mix(in oklab, var(--surface-1) 88%, transparent);
+}
+
+.left h1 {
+  margin-bottom: 0.4rem;
+}
+
+.eyebrow {
+  color: var(--accent-1);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+}
+
+.demo-buttons {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+
+.right {
+  display: grid;
+  gap: 0.8rem;
+  align-content: start;
+}
+
+@media (max-width: 900px) {
+  .login-wrap {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,35 @@
+<section class="login-wrap panel">
+  <div class="left">
+    <p class="eyebrow">Acceso Backoffice</p>
+    <h1>Gestion del catalogo y usuarios</h1>
+    <p class="muted">
+      Inicia sesion para usar CRUD protegido, gestionar archivos de producto y administrar cuentas.
+    </p>
+
+    <div class="demo-buttons">
+      <button type="button" class="btn ghost" (click)="usarCredencialesDemo('admin')">Usar demo SuperAdmin</button>
+      <button type="button" class="btn ghost" (click)="usarCredencialesDemo('user')">Usar demo User</button>
+    </div>
+  </div>
+
+  <form class="right" (ngSubmit)="submit()">
+    <div class="field">
+      <label>Username</label>
+      <input name="username" [(ngModel)]="username" required />
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" name="password" [(ngModel)]="password" required />
+    </div>
+    <button type="submit" class="btn" [disabled]="loading()">Entrar</button>
+    @if (loading()) {
+      <p class="status">Autenticando...</p>
+    }
+    @if (successMessage()) {
+      <p class="status ok">{{ successMessage() }}</p>
+    }
+    @if (errorMessage()) {
+      <p class="status error">{{ errorMessage() }}</p>
+    }
+  </form>
+</section>

@@ -1,0 +1,135 @@
+.hero {
+  margin-top: 1rem;
+  background:
+    linear-gradient(130deg, rgba(84, 211, 194, 0.22), rgba(136, 166, 255, 0.13)),
+    color-mix(in oklab, var(--surface-1) 90%, transparent);
+}
+
+.hero .kicker {
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-1);
+  font-size: 0.8rem;
+}
+
+.hero h1 {
+  font-size: clamp(1.8rem, 3vw, 2.8rem);
+  margin-bottom: 0.5rem;
+}
+
+.actions {
+  margin-top: 0.8rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.switch {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+  color: var(--ink-200);
+}
+
+.switch input {
+  accent-color: var(--accent-2);
+}
+
+.small {
+  font-size: 0.82rem;
+}
+
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 0.9rem;
+  margin-top: 0.9rem;
+}
+
+.product-card {
+  cursor: pointer;
+  transform: translateY(6px);
+  opacity: 0;
+  animation: reveal 0.5s ease forwards;
+}
+
+.product-card:nth-child(2n) {
+  animation-delay: 0.08s;
+}
+
+.product-card:nth-child(3n) {
+  animation-delay: 0.14s;
+}
+
+.product-card h3 {
+  margin: 0.6rem 0 0.4rem;
+}
+
+.meta {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.hidden-pill {
+  border-color: color-mix(in oklab, var(--warn) 65%, transparent);
+  color: var(--warn);
+}
+
+.detail,
+.externos {
+  margin-top: 1rem;
+}
+
+.file-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.8rem 0 0;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.file-list li {
+  border-radius: 12px;
+  padding: 0.7rem;
+  border: 1px solid color-mix(in oklab, var(--surface-2) 70%, transparent);
+  display: flex;
+  justify-content: space-between;
+  gap: 0.8rem;
+  align-items: center;
+}
+
+.file-list strong {
+  display: block;
+}
+
+.file-list small {
+  color: var(--ink-300);
+}
+
+.externos-grid {
+  margin-top: 0.8rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.7rem;
+}
+
+.externo-card h3 {
+  margin-bottom: 0.3rem;
+}
+
+@keyframes reveal {
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 640px) {
+  .file-list li {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

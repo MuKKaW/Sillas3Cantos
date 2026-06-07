@@ -1,0 +1,173 @@
+/* You can add global styles to this file, and also import other style files */
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Syne:wght@500;700;800&display=swap');
+
+:root {
+  --font-body: 'Space Grotesk', sans-serif;
+  --font-display: 'Syne', sans-serif;
+  --bg-0: #f8fcfb;
+  --bg-1: #eef6f3;
+  --surface-1: #ffffff;
+  --surface-2: #d5e7e0;
+  --ink-100: #122520;
+  --ink-200: #32514a;
+  --ink-300: #5f7e76;
+  --accent-1: #32b082;
+  --accent-2: #26a0d8;
+  --accent-3: #76c4ed;
+  --ok: #1a9c63;
+  --warn: #d3a73b;
+  --danger: #cf4c60;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--ink-100);
+  background:
+    radial-gradient(1100px 430px at 20% -15%, rgba(50, 176, 130, 0.19), transparent 64%),
+    radial-gradient(820px 420px at 98% 0%, rgba(38, 160, 216, 0.16), transparent 62%),
+    linear-gradient(170deg, var(--bg-1), var(--bg-0) 55%);
+  background-attachment: fixed;
+}
+
+h1,
+h2,
+h3 {
+  margin-top: 0;
+  font-family: var(--font-display);
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+.panel {
+  border-radius: 20px;
+  border: 1px solid color-mix(in oklab, var(--surface-2) 88%, transparent);
+  background: color-mix(in oklab, var(--surface-1) 92%, transparent);
+  box-shadow: 0 14px 34px rgba(26, 96, 86, 0.08);
+  padding: 1.1rem;
+}
+
+.panel-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.pill {
+  border-radius: 999px;
+  padding: 0.25rem 0.58rem;
+  font-size: 0.75rem;
+  border: 1px solid color-mix(in oklab, var(--surface-2) 85%, transparent);
+  color: var(--ink-200);
+  background: color-mix(in oklab, #ffffff 88%, var(--accent-3) 12%);
+}
+
+.btn {
+  border: none;
+  border-radius: 10px;
+  padding: 0.62rem 1rem;
+  cursor: pointer;
+  font-weight: 600;
+  color: #0d2a24;
+  background: linear-gradient(130deg, var(--accent-1), var(--accent-3));
+}
+
+.btn:hover {
+  filter: brightness(1.04);
+}
+
+.btn.alt {
+  background: linear-gradient(130deg, var(--accent-3), var(--accent-2));
+}
+
+.btn.ghost {
+  border: 1px solid color-mix(in oklab, var(--surface-2) 82%, transparent);
+  background: transparent;
+  color: var(--ink-100);
+}
+
+.btn.warn {
+  background: linear-gradient(130deg, var(--warn), #ffa95e);
+  color: #ffffff;
+}
+
+.btn.danger {
+  background: linear-gradient(130deg, var(--danger), #ff4d5a);
+  color: #ffffff;
+}
+
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 1.05rem;
+  margin-bottom: 0.85rem;
+}
+
+.field {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.field label {
+  color: var(--ink-200);
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.field input,
+.field select,
+.field textarea {
+  border-radius: 10px;
+  border: 1px solid color-mix(in oklab, var(--surface-2) 86%, transparent);
+  background: #ffffff;
+  color: var(--ink-100);
+  padding: 0.64rem 0.78rem;
+  min-height: 42px;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  outline: none;
+  border-color: color-mix(in oklab, var(--accent-2) 62%, transparent);
+  box-shadow: 0 0 0 3px rgba(38, 160, 216, 0.14);
+}
+
+.field textarea {
+  min-height: 108px;
+  resize: vertical;
+}
+
+.muted {
+  color: var(--ink-300);
+}
+
+.status {
+  margin-top: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.status.error {
+  color: var(--danger);
+}
+
+.status.ok {
+  color: var(--ok);
+}

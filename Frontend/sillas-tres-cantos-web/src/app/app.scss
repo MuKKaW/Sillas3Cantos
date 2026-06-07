@@ -1,0 +1,128 @@
+.app-shell {
+  min-height: 100vh;
+  color: var(--ink-100);
+}
+
+.main-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.4rem;
+  margin: 0.8rem;
+  border-radius: 18px;
+  backdrop-filter: blur(14px);
+  background: color-mix(in oklab, #ffffff 92%, var(--accent-3) 8%);
+  border: 1px solid color-mix(in oklab, var(--surface-2) 85%, transparent);
+  box-shadow: 0 12px 28px rgba(33, 94, 83, 0.08);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  text-decoration: none;
+  color: var(--ink-100);
+}
+
+.brand-mark {
+  display: grid;
+  place-items: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 50%;
+  background: linear-gradient(130deg, var(--accent-1), var(--accent-3));
+  color: #111;
+  font-size: 0.88rem;
+  font-family: var(--font-display);
+  letter-spacing: 0.08em;
+}
+
+.brand-text {
+  font-family: var(--font-display);
+  letter-spacing: 0.03em;
+  font-size: 1rem;
+}
+
+.main-nav {
+  display: inline-flex;
+  gap: 0.8rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.main-nav a {
+  color: var(--ink-200);
+  text-decoration: none;
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.main-nav a:hover {
+  background: color-mix(in oklab, var(--accent-2) 18%, #ffffff);
+  color: var(--ink-100);
+  transform: translateY(-1px);
+}
+
+.main-nav a.active {
+  background: linear-gradient(135deg, var(--accent-1), var(--accent-3));
+  color: #0f2a25;
+  font-weight: 600;
+}
+
+.session-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.7rem;
+}
+
+.role-chip {
+  border-radius: 999px;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: color-mix(in oklab, var(--accent-1) 24%, #ffffff);
+  color: var(--ink-100);
+  border: 1px solid color-mix(in oklab, var(--accent-1) 36%, #ffffff);
+}
+
+.role-chip.superadmin {
+  background: color-mix(in oklab, var(--ok) 24%, #ffffff);
+  border-color: color-mix(in oklab, var(--ok) 42%, #ffffff);
+}
+
+.ghost-btn {
+  border: 1px solid color-mix(in oklab, var(--surface-2) 88%, transparent);
+  background: transparent;
+  color: var(--ink-100);
+  border-radius: 999px;
+  padding: 0.45rem 0.84rem;
+  cursor: pointer;
+}
+
+.ghost-btn:hover {
+  border-color: var(--accent-1);
+}
+
+.main-content {
+  width: min(1200px, calc(100% - 1.6rem));
+  margin: 0 auto 2rem;
+}
+
+@media (max-width: 860px) {
+  .main-header {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+
+  .session-box {
+    width: 100%;
+    justify-content: center;
+  }
+}

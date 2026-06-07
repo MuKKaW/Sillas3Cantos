@@ -1,0 +1,183 @@
+<section class="hero panel">
+  <p class="kicker">Landing publica + busqueda externa</p>
+  <h1>Catalogo vivo de sillas y mobiliario</h1>
+  <p class="muted">
+    Esta vista consume `productos`, `categorias`, `marcas` e integracion externa.
+    Si inicias sesion, puedes activar `includeHidden`.
+  </p>
+</section>
+
+<section class="panel">
+  <div class="panel-title">
+    <h2>Filtros del catalogo</h2>
+    <span class="pill">{{ productos.length }} resultados</span>
+  </div>
+
+  <div class="field-grid">
+    <div class="field">
+      <label>Nombre</label>
+      <input [(ngModel)]="filtroNombre" placeholder="buscar por nombre" />
+    </div>
+
+    <div class="field">
+      <label>Categoria</label>
+      <select [(ngModel)]="filtroCategoriaId">
+        <option [ngValue]="0">Todas</option>
+        @for (categoria of categorias; track categoria.id) {
+          <option [ngValue]="categoria.id">{{ categoria.nombre }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Marca</label>
+      <select [(ngModel)]="filtroMarcaId">
+        <option [ngValue]="0">Todas</option>
+        @for (marca of marcas; track marca.id) {
+          <option [ngValue]="marca.id">{{ marca.nombre }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Orden</label>
+      <select [(ngModel)]="orderAsc">
+        <option [ngValue]="true">Nombre ASC</option>
+        <option [ngValue]="false">Nombre DESC</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button type="button" class="btn" (click)="aplicarFiltros()">Aplicar filtros</button>
+    <button type="button" class="btn ghost" (click)="limpiarFiltros()">Limpiar</button>
+    <label class="switch">
+      <input
+        type="checkbox"
+        [(ngModel)]="includeHidden"
+        [disabled]="!includeHiddenAllowed()"
+        (change)="toggleIncludeHidden()"
+      />
+      <span>includeHidden</span>
+    </label>
+  </div>
+
+  @if (!includeHiddenAllowed()) {
+    <p class="muted small">`includeHidden` requiere autenticacion.</p>
+  }
+
+  @if (loadingCatalogo()) {
+    <p class="status">Cargando catalogo...</p>
+  }
+</section>
+
+<section class="product-grid">
+  @for (producto of productos; track producto.id) {
+    <article class="panel product-card" (click)="seleccionarProducto(producto)">
+      <p class="pill">{{ marcaNombre(producto.marcaId) }}</p>
+      <h3>{{ producto.nombre }}</h3>
+      <p class="muted">{{ producto.descripcion || 'Sin descripcion' }}</p>
+      <div class="meta">
+        <strong>{{ producto.precio | currency:'EUR':'symbol':'1.2-2' }}</strong>
+        <span>Stock: {{ producto.stock }}</span>
+      </div>
+      <div class="meta">
+        <span>{{ categoriaNombre(producto.categoriaId) }}</span>
+        @if (!producto.esVisible) {
+          <span class="pill hidden-pill">Oculto</span>
+        }
+      </div>
+    </article>
+  }
+</section>
+
+<section class="panel detail">
+  <div class="panel-title">
+    <h2>Detalle y archivos del producto</h2>
+    @if (selectedProducto) {
+      <span class="pill">ID {{ selectedProducto.id }}</span>
+    }
+  </div>
+
+  @if (!selectedProducto) {
+    <p class="muted">Selecciona un producto para ver detalle y archivos.</p>
+  } @else {
+    <h3>{{ selectedProducto.nombre }}</h3>
+    <p class="muted">{{ selectedProducto.descripcion || 'Sin descripcion' }}</p>
+    <p>
+      {{ selectedProducto.precio | currency:'EUR':'symbol':'1.2-2' }}
+      · Categoria: {{ categoriaNombre(selectedProducto.categoriaId) }}
+      · Marca: {{ marcaNombre(selectedProducto.marcaId) }}
+    </p>
+
+    @if (loadingArchivos()) {
+      <p class="status">Cargando archivos...</p>
+    } @else if (selectedProductoArchivos.length === 0) {
+      <p class="muted">Este producto no tiene archivos asociados.</p>
+    } @else {
+      <ul class="file-list">
+        @for (archivo of selectedProductoArchivos; track archivo.id) {
+          <li>
+            <div>
+              <strong>{{ archivo.nombreOriginal }}</strong>
+              <small>{{ bytesToMb(archivo.tamanoBytes) }} · {{ archivo.fechaSubida | date:'short' }}</small>
+            </div>
+            <button type="button" class="btn alt" (click)="descargarArchivo(archivo)">Descargar</button>
+          </li>
+        }
+      </ul>
+    }
+  }
+</section>
+
+<section class="panel externos">
+  <div class="panel-title">
+    <h2>Integracion externa (DummyJSON)</h2>
+    <span class="pill">{{ externosResultado?.fuente || 'sin consulta' }}</span>
+  </div>
+
+  <div class="field-grid">
+    <div class="field">
+      <label>Query</label>
+      <input [(ngModel)]="externosQuery" placeholder="chair, office..." />
+    </div>
+    <div class="field">
+      <label>Limit</label>
+      <input type="number" min="1" max="30" [(ngModel)]="externosLimit" />
+    </div>
+    <div class="field">
+      <label>Skip</label>
+      <input type="number" min="0" [(ngModel)]="externosSkip" />
+    </div>
+  </div>
+  <div class="actions">
+    <button type="button" class="btn" (click)="buscarExternos()">Buscar externos</button>
+  </div>
+
+  @if (loadingExternos()) {
+    <p class="status">Consultando API externa...</p>
+  }
+
+  @if (externosResultado?.productos?.length) {
+    <div class="externos-grid">
+      @for (productoExt of externosResultado!.productos; track productoExt.idExterno) {
+        <article class="panel externo-card">
+          <h3>{{ productoExt.nombre }}</h3>
+          <p class="muted">{{ productoExt.descripcion || 'Sin descripcion' }}</p>
+          <p>
+            {{ productoExt.precio | currency:'EUR':'symbol':'1.2-2' }}
+            · Rating {{ productoExt.rating }}
+          </p>
+          <p class="muted">{{ productoExt.categoria }} · {{ productoExt.marca || 'Sin marca' }}</p>
+        </article>
+      }
+    </div>
+  }
+</section>
+
+@if (statusMessage()) {
+  <p class="status ok">{{ statusMessage() }}</p>
+}
+@if (errorMessage()) {
+  <p class="status error">{{ errorMessage() }}</p>
+}

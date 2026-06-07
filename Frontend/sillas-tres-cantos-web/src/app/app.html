@@ -1,0 +1,27 @@
+<div class="app-shell">
+  <header class="main-header">
+    <a routerLink="/" class="brand">
+      <span class="brand-mark">S3C</span>
+      <span class="brand-text">Sillas Tres Cantos</span>
+    </a>
+
+    <nav class="main-nav">
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Catalogo</a>
+      <a routerLink="/backoffice" routerLinkActive="active">Backoffice</a>
+      @if (!isAuthenticated()) {
+        <a routerLink="/login" routerLinkActive="active">Login</a>
+      }
+    </nav>
+
+    <div class="session-box">
+      <span class="role-chip" [class.superadmin]="isSuperAdmin()">{{ roleLabel() }}</span>
+      @if (isAuthenticated()) {
+        <button type="button" class="ghost-btn" (click)="logout()">Cerrar sesion</button>
+      }
+    </div>
+  </header>
+
+  <main class="main-content">
+    <router-outlet />
+  </main>
+</div>
