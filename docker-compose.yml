@@ -35,6 +35,7 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__DefaultConnection: Server=mysql;Port=3306;Database=sillas_tres_cantos;Uid=app;Pwd=app123;SslMode=Disabled;AllowPublicKeyRetrieval=True;
+      CLOUDINARY_URL: ${CLOUDINARY_URL}
     volumes:
       - api_storage:/app/storage
     ports:
