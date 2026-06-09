@@ -18,6 +18,7 @@ builder.Services.AddScoped<IMarcaService, MarcaService>();
 builder.Services.AddScoped<ICategoriaService, CategoriaService>();
 builder.Services.AddScoped<IProductoService, ProductoService>();
 builder.Services.AddScoped<IProductoArchivoService, ProductoArchivoService>();
+builder.Services.AddScoped<IProductoArchivoStorageService, LocalProductoArchivoStorageService>();
 builder.Services.AddSingleton<CloudinaryWrapper>();
 builder.Services.Configure<DatabaseOptions>(builder.Configuration.GetSection(DatabaseOptions.SectionName));
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
