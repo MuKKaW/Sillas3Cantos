@@ -1,4 +1,5 @@
 using System.Text;
+using dotenv.net;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -6,7 +7,9 @@ using Microsoft.OpenApi;
 using SillasTresCantos.Api.Configuration;
 using SillasTresCantos.Api.Data;
 using SillasTresCantos.Api.Services;
+using SillasTresCantos.Api.Services.Storage;
 
+DotEnv.Load(options: new DotEnvOptions(probeForEnv: true));
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
@@ -15,6 +18,7 @@ builder.Services.AddScoped<IMarcaService, MarcaService>();
 builder.Services.AddScoped<ICategoriaService, CategoriaService>();
 builder.Services.AddScoped<IProductoService, ProductoService>();
 builder.Services.AddScoped<IProductoArchivoService, ProductoArchivoService>();
+builder.Services.AddSingleton<CloudinaryWrapper>();
 builder.Services.Configure<DatabaseOptions>(builder.Configuration.GetSection(DatabaseOptions.SectionName));
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
 builder.Services.Configure<DummyJsonOptions>(builder.Configuration.GetSection(DummyJsonOptions.SectionName));
