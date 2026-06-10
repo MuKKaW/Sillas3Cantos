@@ -45,6 +45,9 @@ CREATE TABLE IF NOT EXISTS productos (
   marca_id INT NOT NULL,
   creado_por_usuario_id INT NULL,
   es_visible BOOLEAN NOT NULL DEFAULT TRUE,
+  imagen_url VARCHAR(1000) NULL,
+  imagen_public_id VARCHAR(255) NULL,
+  imagen_resource_type VARCHAR(20) NULL,
   fecha_creacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   fecha_actualizacion DATETIME NULL DEFAULT NULL,
   FOREIGN KEY (categoria_id) REFERENCES categorias(id),
@@ -296,6 +299,51 @@ SET @sql = IF (
   ),
   'SELECT 1',
   'ALTER TABLE productos ADD COLUMN es_visible BOOLEAN NOT NULL DEFAULT TRUE'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @sql = IF (
+  EXISTS (
+    SELECT 1
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = @schema_name
+      AND TABLE_NAME = 'productos'
+      AND COLUMN_NAME = 'imagen_url'
+  ),
+  'SELECT 1',
+  'ALTER TABLE productos ADD COLUMN imagen_url VARCHAR(1000) NULL AFTER es_visible'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @sql = IF (
+  EXISTS (
+    SELECT 1
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = @schema_name
+      AND TABLE_NAME = 'productos'
+      AND COLUMN_NAME = 'imagen_public_id'
+  ),
+  'SELECT 1',
+  'ALTER TABLE productos ADD COLUMN imagen_public_id VARCHAR(255) NULL AFTER imagen_url'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @sql = IF (
+  EXISTS (
+    SELECT 1
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = @schema_name
+      AND TABLE_NAME = 'productos'
+      AND COLUMN_NAME = 'imagen_resource_type'
+  ),
+  'SELECT 1',
+  'ALTER TABLE productos ADD COLUMN imagen_resource_type VARCHAR(20) NULL AFTER imagen_public_id'
 );
 PREPARE stmt FROM @sql;
 EXECUTE stmt;

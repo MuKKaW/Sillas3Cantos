@@ -11,6 +11,9 @@ public class Producto
     public int MarcaId { get; set; }
     public int? CreadoPorUsuarioId { get; set; }
     public bool EsVisible { get; set; }
+    public string? ImagenUrl { get; set; }
+    public string? ImagenPublicId { get; set; }
+    public string? ImagenResourceType { get; set; }
     public DateTime FechaCreacion { get; set; }
     public DateTime? FechaActualizacion { get; set; }
     public Producto() { }

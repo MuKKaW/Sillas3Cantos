@@ -91,6 +91,9 @@ public class ProductoService : IProductoService
             MarcaId = producto.MarcaId,
             CreadoPorUsuarioId = creadoPorUsuarioId,
             EsVisible = esVisible,
+            ImagenUrl = null,
+            ImagenPublicId = null,
+            ImagenResourceType = null,
             FechaCreacion = DateTime.UtcNow,
             FechaActualizacion = null
         };
@@ -205,6 +208,9 @@ public class ProductoService : IProductoService
             MarcaId = marcaIdFinal,
             CreadoPorUsuarioId = existente.CreadoPorUsuarioId,
             EsVisible = esVisibleFinal,
+            ImagenUrl = existente.ImagenUrl,
+            ImagenPublicId = existente.ImagenPublicId,
+            ImagenResourceType = existente.ImagenResourceType,
             FechaCreacion = existente.FechaCreacion,
             FechaActualizacion = DateTime.UtcNow
         };
@@ -276,6 +282,7 @@ public class ProductoService : IProductoService
             MarcaId = producto.MarcaId,
             CreadoPorUsuarioId = producto.CreadoPorUsuarioId,
             EsVisible = producto.EsVisible,
+            ImagenUrl = producto.ImagenUrl,
             FechaCreacion = producto.FechaCreacion,
             FechaActualizacion = producto.FechaActualizacion
         };
