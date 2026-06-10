@@ -1,7 +1,10 @@
+using Microsoft.Extensions.Options;
 using MySql.Data.MySqlClient;
+using SillasTresCantos.Api.Configuration;
 using SillasTresCantos.Api.Data;
 using SillasTresCantos.Api.DTOs;
 using SillasTresCantos.Api.Models;
+using SillasTresCantos.Api.Services.Storage;
 
 namespace SillasTresCantos.Api.Services;
 
@@ -10,11 +13,32 @@ public class ProductoService : IProductoService
     private const int MaxNombreLength = 150;
     private const int MaxDescripcionLength = 500;
     private const decimal MaxPrecio = 99999999.99m;
-    private readonly IProductoRepository _productoRepository;
+    private static readonly HashSet<string> AllowedImageExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".jpg",
+        ".jpeg",
+        ".png",
+        ".webp"
+    };
+    private static readonly HashSet<string> AllowedImageContentTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "image/jpeg",
+        "image/png",
+        "image/webp"
+    };
 
-    public ProductoService(IProductoRepository productoRepository)
+    private readonly IProductoRepository _productoRepository;
+    private readonly IProductoImagenStorageService _productoImagenStorageService;
+    private readonly FileStorageOptions _fileStorageOptions;
+
+    public ProductoService(
+        IProductoRepository productoRepository,
+        IProductoImagenStorageService productoImagenStorageService,
+        IOptions<FileStorageOptions> fileStorageOptions)
     {
         _productoRepository = productoRepository;
+        _productoImagenStorageService = productoImagenStorageService;
+        _fileStorageOptions = fileStorageOptions.Value;
     }
 
     public async Task<List<GetProductoDTO>> GetProductosAsync(GetProductosFiltroDTO filtro)
@@ -122,6 +146,105 @@ public class ProductoService : IProductoService
         }
 
         return ProductoOperationResult.Success(MapToGetProductoDTO(creado));
+    }
+
+    public async Task<ProductoOperationResult> PostProductoConImagenAsync(
+        PostProductoConImagenDTO producto,
+        int creadoPorUsuarioId,
+        CancellationToken cancellationToken = default)
+    {
+        string nombre = producto.Nombre?.Trim() ?? string.Empty;
+        string? descripcion = NormalizeOptional(producto.Descripcion);
+        bool esVisible = producto.EsVisible ?? true;
+
+        if (!IsValidNombre(nombre)
+            || !IsValidDescripcion(descripcion)
+            || !IsValidPrecio(producto.Precio)
+            || !IsValidStock(producto.Stock)
+            || !IsValidForeignId(creadoPorUsuarioId)
+            || !IsValidForeignId(producto.CategoriaId)
+            || !IsValidForeignId(producto.MarcaId)
+            || producto.Imagen is null
+            || producto.Imagen.Length == 0)
+        {
+            return ProductoOperationResult.ValidationError();
+        }
+
+        if (producto.Imagen.Length > GetMaxImageSizeBytes())
+        {
+            return ProductoOperationResult.FileTooLargeError();
+        }
+
+        if (!IsSupportedImage(producto.Imagen))
+        {
+            return ProductoOperationResult.UnsupportedTypeError();
+        }
+
+        bool categoriaExiste = await _productoRepository.CategoriaExistsAsync(producto.CategoriaId, cancellationToken);
+        bool marcaExiste = await _productoRepository.MarcaExistsAsync(producto.MarcaId, cancellationToken);
+
+        if (!categoriaExiste || !marcaExiste)
+        {
+            return ProductoOperationResult.RelatedNotFoundError();
+        }
+
+        StoredProductoImagen? storedImagen = null;
+        try
+        {
+            storedImagen = await _productoImagenStorageService.UploadAsync(producto.Imagen, cancellationToken);
+
+            Producto nuevoProducto = new()
+            {
+                Id = 0,
+                Nombre = nombre,
+                Descripcion = descripcion,
+                Precio = producto.Precio,
+                Stock = producto.Stock,
+                CategoriaId = producto.CategoriaId,
+                MarcaId = producto.MarcaId,
+                CreadoPorUsuarioId = creadoPorUsuarioId,
+                EsVisible = esVisible,
+                ImagenUrl = storedImagen.Url,
+                ImagenPublicId = storedImagen.PublicId,
+                ImagenResourceType = storedImagen.ResourceType,
+                FechaCreacion = DateTime.UtcNow,
+                FechaActualizacion = null
+            };
+
+            Producto? creado = await _productoRepository.CreateProductoAsync(nuevoProducto, cancellationToken);
+            if (creado is null)
+            {
+                await TryDeleteStoredImagenAsync(storedImagen, CancellationToken.None);
+                return ProductoOperationResult.UnexpectedError();
+            }
+
+            return ProductoOperationResult.Success(MapToGetProductoDTO(creado));
+        }
+        catch (MySqlException ex) when (IsDuplicateKey(ex))
+        {
+            await TryDeleteStoredImagenAsync(storedImagen, CancellationToken.None);
+            return ProductoOperationResult.ConflictError();
+        }
+        catch (MySqlException ex) when (IsForeignKeyViolation(ex))
+        {
+            await TryDeleteStoredImagenAsync(storedImagen, CancellationToken.None);
+            return ProductoOperationResult.RelatedNotFoundError();
+        }
+        catch (MySqlException)
+        {
+            await TryDeleteStoredImagenAsync(storedImagen, CancellationToken.None);
+            return ProductoOperationResult.UnexpectedError();
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            await TryDeleteStoredImagenAsync(storedImagen, CancellationToken.None);
+            throw;
+        }
+        catch (Exception)
+        {
+            await TryDeleteStoredImagenAsync(storedImagen, CancellationToken.None);
+            return ProductoOperationResult.UnexpectedError();
+        }
     }
 
     public async Task<ProductoOperationResult> PutProductoAsync(PutProductoDTO producto)
@@ -312,6 +435,38 @@ public class ProductoService : IProductoService
 
     private static bool IsValidForeignId(int id) =>
         id > 0;
+
+    private long GetMaxImageSizeBytes() =>
+        _fileStorageOptions.MaxFileSizeBytes <= 0
+            ? 5 * 1024 * 1024
+            : _fileStorageOptions.MaxFileSizeBytes;
+
+    private static bool IsSupportedImage(IFormFile imagen)
+    {
+        string extension = Path.GetExtension(imagen.FileName);
+        if (!AllowedImageExtensions.Contains(extension))
+        {
+            return false;
+        }
+
+        return AllowedImageContentTypes.Contains(imagen.ContentType);
+    }
+
+    private async Task TryDeleteStoredImagenAsync(StoredProductoImagen? storedImagen, CancellationToken cancellationToken)
+    {
+        if (storedImagen is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await _productoImagenStorageService.DeleteAsync(storedImagen.PublicId, cancellationToken);
+        }
+        catch (Exception)
+        {
+        }
+    }
 
     private static bool IsDuplicateKey(MySqlException ex) => ex.Number == 1062;
 
