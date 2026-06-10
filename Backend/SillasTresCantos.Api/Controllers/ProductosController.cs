@@ -141,6 +141,42 @@ public class ProductosController : ControllerBase
         return CreatedAtAction(nameof(GetProductoById), new { id = resultado.Producto.Id }, resultado.Producto);
     }
 
+    [HttpPost("with-imagen")]
+    [Authorize]
+    [Consumes("multipart/form-data")]
+    public async Task<ActionResult<GetProductoDTO>> PostProductoConImagen(
+        [FromForm] PostProductoConImagenDTO producto,
+        CancellationToken cancellationToken = default)
+    {
+        if (!TryGetUsuarioAutenticadoId(out int usuarioId))
+        {
+            return Unauthorized("No se pudo identificar al usuario autenticado. Vuelve a iniciar sesion.");
+        }
+
+        ProductoOperationResult resultado =
+            await _productoService.PostProductoConImagenAsync(producto, usuarioId, cancellationToken);
+
+        if (!resultado.IsSuccess)
+        {
+            return resultado.Error switch
+            {
+                ProductoOperationError.Validation => BadRequest("Los datos del producto o la imagen no son validos."),
+                ProductoOperationError.RelatedNotFound => BadRequest("La categoria o la marca indicada no existe."),
+                ProductoOperationError.Conflict => Conflict("Existe un conflicto con los datos del producto."),
+                ProductoOperationError.UnsupportedType => BadRequest("La imagen debe ser JPG, PNG o WEBP."),
+                ProductoOperationError.FileTooLarge => StatusCode(StatusCodes.Status413PayloadTooLarge, "La imagen supera el tamano maximo permitido."),
+                _ => StatusCode(StatusCodes.Status500InternalServerError)
+            };
+        }
+
+        if (resultado.Producto is null)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError);
+        }
+
+        return CreatedAtAction(nameof(GetProductoById), new { id = resultado.Producto.Id }, resultado.Producto);
+    }
+
     [HttpPut("{id:int}")]
     [Authorize]
     public async Task<IActionResult> PutProducto(int id, [FromBody] PutProductoDTO producto)
