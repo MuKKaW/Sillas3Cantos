@@ -17,6 +17,7 @@ public class UsuariosController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize]
     public async Task<ActionResult<List<GetUsuarioDTO>>> GetUsuarios([FromQuery] string nombre = "", [FromQuery] bool orderAsc = true)
     {
         GetUsuariosFiltroDTO filtro = new()
@@ -29,6 +30,7 @@ public class UsuariosController : ControllerBase
     }
 
     [HttpGet("{id:int}")]
+    [Authorize]
     public async Task<ActionResult<GetUsuarioDTO>> GetUsuarioById(int id)
     {
         GetUsuarioDTO? usuario = await _usuarioService.GetUsuarioByIdAsync(id);
