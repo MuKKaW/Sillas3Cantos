@@ -4,6 +4,7 @@ using SillasTresCantos.Api.Configuration;
 using SillasTresCantos.Api.Data;
 using SillasTresCantos.Api.DTOs;
 using SillasTresCantos.Api.Models;
+using SillasTresCantos.Api.Services.Storage;
 
 namespace SillasTresCantos.Api.Services;
 
@@ -12,20 +13,20 @@ public class ProductoArchivoService : IProductoArchivoService
     private const long DefaultMaxFileSizeBytes = 5 * 1024 * 1024;
     private readonly IProductoArchivoRepository _productoArchivoRepository;
     private readonly IProductoRepository _productoRepository;
+    private readonly IProductoArchivoStorageService _storageService;
     private readonly FileStorageOptions _fileStorageOptions;
-    private readonly IWebHostEnvironment _environment;
     private readonly HashSet<string> _allowedExtensions;
 
     public ProductoArchivoService(
         IProductoArchivoRepository productoArchivoRepository,
         IProductoRepository productoRepository,
         IOptions<FileStorageOptions> fileStorageOptions,
-        IWebHostEnvironment environment)
+        IProductoArchivoStorageService storageService)
     {
         _productoArchivoRepository = productoArchivoRepository;
         _productoRepository = productoRepository;
+        _storageService = storageService;
         _fileStorageOptions = fileStorageOptions.Value;
-        _environment = environment;
         _allowedExtensions = (_fileStorageOptions.AllowedExtensions ?? Array.Empty<string>())
             .Where(extension => !string.IsNullOrWhiteSpace(extension))
             .Select(extension => extension.Trim().ToLowerInvariant())
@@ -108,26 +109,32 @@ public class ProductoArchivoService : IProductoArchivoService
             return ProductoArchivoOperationResult.NotFoundError();
         }
 
-        if (!TryResolveAbsolutePath(archivo.RutaRelativa, out string absolutePath))
+        ProductoArchivoDownload download;
+        try
         {
-            return ProductoArchivoOperationResult.NotFoundError();
+            download = await _storageService.GetDownloadAsync(archivo, cancellationToken);
+        }
+        catch (IOException)
+        {
+            return ProductoArchivoOperationResult.UnexpectedError();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return ProductoArchivoOperationResult.UnexpectedError();
         }
 
-        if (!File.Exists(absolutePath))
+        if (string.IsNullOrWhiteSpace(download.AbsoluteFilePath))
         {
             return ProductoArchivoOperationResult.NotFoundError();
         }
 
         GetProductoArchivoDTO dto = MapToGetProductoArchivoDTO(archivo);
-        string contentType = string.IsNullOrWhiteSpace(archivo.ContentType)
-            ? "application/octet-stream"
-            : archivo.ContentType;
 
         return ProductoArchivoOperationResult.SuccessDescarga(
             dto,
-            absolutePath,
-            contentType,
-            archivo.NombreOriginal);
+            download.AbsoluteFilePath,
+            download.ContentType,
+            download.FileName);
     }
 
     public async Task<ProductoArchivoOperationResult> UploadArchivoAsync(int productoId, IFormFile? archivo, int subidoPorUsuarioId, CancellationToken cancellationToken = default)
@@ -168,34 +175,22 @@ public class ProductoArchivoService : IProductoArchivoService
             return ProductoArchivoOperationResult.NotFoundError();
         }
 
-        string? absolutePath = null;
+        ProductoArchivo? nuevoArchivo = null;
         try
         {
-            string rootPath = GetStorageRootAbsolutePath();
-            string productoPath = Path.Combine(rootPath, "productos", productoId.ToString());
-            Directory.CreateDirectory(productoPath);
-
-            string generatedFileName = $"{Guid.NewGuid():N}{extension}";
-            absolutePath = Path.Combine(productoPath, generatedFileName);
-
-            await using (FileStream outputStream = new(absolutePath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
-            {
-                await archivo.CopyToAsync(outputStream, cancellationToken);
-            }
-
-            string relativePath = Path.GetRelativePath(rootPath, absolutePath).Replace("\\", "/");
+            StoredProductoArchivo storedArchivo = await _storageService.UploadAsync(archivo, productoId, cancellationToken);
             string contentType = string.IsNullOrWhiteSpace(archivo.ContentType)
                 ? "application/octet-stream"
                 : archivo.ContentType;
 
-            ProductoArchivo nuevoArchivo = new()
+            nuevoArchivo = new ProductoArchivo
             {
                 Id = 0,
                 ProductoId = productoId,
                 SubidoPorUsuarioId = subidoPorUsuarioId,
                 NombreOriginal = Path.GetFileName(archivo.FileName),
-                NombreAlmacenado = generatedFileName,
-                RutaRelativa = relativePath,
+                NombreAlmacenado = storedArchivo.NombreAlmacenado,
+                RutaRelativa = storedArchivo.RutaRelativa,
                 ContentType = contentType,
                 TamanoBytes = archivo.Length,
                 FechaSubida = DateTime.UtcNow
@@ -204,7 +199,7 @@ public class ProductoArchivoService : IProductoArchivoService
             ProductoArchivo? creado = await _productoArchivoRepository.CreateArchivoAsync(nuevoArchivo, cancellationToken);
             if (creado is null)
             {
-                TryDeleteFile(absolutePath);
+                await TryDeleteStoredArchivoAsync(nuevoArchivo, cancellationToken);
                 return ProductoArchivoOperationResult.UnexpectedError();
             }
 
@@ -213,17 +208,17 @@ public class ProductoArchivoService : IProductoArchivoService
         }
         catch (MySqlException)
         {
-            TryDeleteFile(absolutePath);
+            await TryDeleteStoredArchivoAsync(nuevoArchivo, cancellationToken);
             return ProductoArchivoOperationResult.UnexpectedError();
         }
         catch (IOException)
         {
-            TryDeleteFile(absolutePath);
+            await TryDeleteStoredArchivoAsync(nuevoArchivo, cancellationToken);
             return ProductoArchivoOperationResult.UnexpectedError();
         }
         catch (UnauthorizedAccessException)
         {
-            TryDeleteFile(absolutePath);
+            await TryDeleteStoredArchivoAsync(nuevoArchivo, cancellationToken);
             return ProductoArchivoOperationResult.UnexpectedError();
         }
     }
@@ -280,9 +275,17 @@ public class ProductoArchivoService : IProductoArchivoService
             return ProductoArchivoOperationResult.NotFoundError();
         }
 
-        if (TryResolveAbsolutePath(archivo.RutaRelativa, out string absolutePath))
+        try
         {
-            TryDeleteFile(absolutePath);
+            await _storageService.DeleteAsync(archivo, cancellationToken);
+        }
+        catch (IOException)
+        {
+            return ProductoArchivoOperationResult.UnexpectedError();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return ProductoArchivoOperationResult.UnexpectedError();
         }
 
         return ProductoArchivoOperationResult.Success();
@@ -312,58 +315,16 @@ public class ProductoArchivoService : IProductoArchivoService
             UrlDescarga = $"/api/productos/{archivo.ProductoId}/archivos/{archivo.Id}"
         };
 
-    private string GetStorageRootAbsolutePath()
+    private async Task TryDeleteStoredArchivoAsync(ProductoArchivo? archivo, CancellationToken cancellationToken)
     {
-        string configuredPath = string.IsNullOrWhiteSpace(_fileStorageOptions.RootPath)
-            ? "storage"
-            : _fileStorageOptions.RootPath.Trim();
-
-        if (Path.IsPathRooted(configuredPath))
-        {
-            return Path.GetFullPath(configuredPath);
-        }
-
-        return Path.GetFullPath(Path.Combine(_environment.ContentRootPath, configuredPath));
-    }
-
-    private bool TryResolveAbsolutePath(string relativePath, out string absolutePath)
-    {
-        absolutePath = string.Empty;
-        if (string.IsNullOrWhiteSpace(relativePath))
-        {
-            return false;
-        }
-
-        string rootPath = GetStorageRootAbsolutePath();
-        string rootFullPath = Path.GetFullPath(rootPath);
-        string candidatePath = Path.GetFullPath(Path.Combine(rootFullPath, relativePath));
-        string rootWithSeparator = rootFullPath.EndsWith(Path.DirectorySeparatorChar)
-            ? rootFullPath
-            : rootFullPath + Path.DirectorySeparatorChar;
-
-        bool isInsideRoot = candidatePath.StartsWith(rootWithSeparator, StringComparison.OrdinalIgnoreCase);
-        if (!isInsideRoot)
-        {
-            return false;
-        }
-
-        absolutePath = candidatePath;
-        return true;
-    }
-
-    private static void TryDeleteFile(string? absolutePath)
-    {
-        if (string.IsNullOrWhiteSpace(absolutePath))
+        if (archivo is null)
         {
             return;
         }
 
         try
         {
-            if (File.Exists(absolutePath))
-            {
-                File.Delete(absolutePath);
-            }
+            await _storageService.DeleteAsync(archivo, cancellationToken);
         }
         catch (IOException)
         {

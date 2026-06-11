@@ -19,7 +19,7 @@ public class MySqlProductoRepository : IProductoRepository
         await using MySqlConnection connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
         await using MySqlCommand command = connection.CreateCommand();
 
-        StringBuilder sql = new("SELECT id, nombre, descripcion, precio, stock, categoria_id, marca_id, creado_por_usuario_id, es_visible, fecha_creacion, fecha_actualizacion FROM productos");
+        StringBuilder sql = new("SELECT id, nombre, descripcion, precio, stock, categoria_id, marca_id, creado_por_usuario_id, es_visible, imagen_url, imagen_public_id, imagen_resource_type, fecha_creacion, fecha_actualizacion FROM productos");
         List<string> whereClauses = [];
 
         if (idProducto > 0)
@@ -79,7 +79,7 @@ public class MySqlProductoRepository : IProductoRepository
         await using MySqlCommand command = connection.CreateCommand();
 
         command.CommandText = """
-                              SELECT id, nombre, descripcion, precio, stock, categoria_id, marca_id, creado_por_usuario_id, es_visible, fecha_creacion, fecha_actualizacion
+                              SELECT id, nombre, descripcion, precio, stock, categoria_id, marca_id, creado_por_usuario_id, es_visible, imagen_url, imagen_public_id, imagen_resource_type, fecha_creacion, fecha_actualizacion
                               FROM productos
                               WHERE id = @id
                               LIMIT 1;
@@ -101,8 +101,8 @@ public class MySqlProductoRepository : IProductoRepository
         await using MySqlCommand command = connection.CreateCommand();
 
         command.CommandText = """
-                              INSERT INTO productos (nombre, descripcion, precio, stock, categoria_id, marca_id, creado_por_usuario_id, es_visible, fecha_creacion, fecha_actualizacion)
-                              VALUES (@nombre, @descripcion, @precio, @stock, @categoriaId, @marcaId, @creadoPorUsuarioId, @esVisible, @fechaCreacion, @fechaActualizacion);
+                              INSERT INTO productos (nombre, descripcion, precio, stock, categoria_id, marca_id, creado_por_usuario_id, es_visible, imagen_url, imagen_public_id, imagen_resource_type, fecha_creacion, fecha_actualizacion)
+                              VALUES (@nombre, @descripcion, @precio, @stock, @categoriaId, @marcaId, @creadoPorUsuarioId, @esVisible, @imagenUrl, @imagenPublicId, @imagenResourceType, @fechaCreacion, @fechaActualizacion);
                               SELECT LAST_INSERT_ID();
                               """;
         command.Parameters.AddWithValue("@nombre", producto.Nombre);
@@ -113,6 +113,9 @@ public class MySqlProductoRepository : IProductoRepository
         command.Parameters.AddWithValue("@marcaId", producto.MarcaId);
         command.Parameters.AddWithValue("@creadoPorUsuarioId", (object?)producto.CreadoPorUsuarioId ?? DBNull.Value);
         command.Parameters.AddWithValue("@esVisible", producto.EsVisible);
+        command.Parameters.AddWithValue("@imagenUrl", (object?)producto.ImagenUrl ?? DBNull.Value);
+        command.Parameters.AddWithValue("@imagenPublicId", (object?)producto.ImagenPublicId ?? DBNull.Value);
+        command.Parameters.AddWithValue("@imagenResourceType", (object?)producto.ImagenResourceType ?? DBNull.Value);
         command.Parameters.AddWithValue("@fechaCreacion", producto.FechaCreacion);
         command.Parameters.AddWithValue("@fechaActualizacion", (object?)producto.FechaActualizacion ?? DBNull.Value);
 
@@ -135,6 +138,9 @@ public class MySqlProductoRepository : IProductoRepository
             MarcaId = producto.MarcaId,
             CreadoPorUsuarioId = producto.CreadoPorUsuarioId,
             EsVisible = producto.EsVisible,
+            ImagenUrl = producto.ImagenUrl,
+            ImagenPublicId = producto.ImagenPublicId,
+            ImagenResourceType = producto.ImagenResourceType,
             FechaCreacion = producto.FechaCreacion,
             FechaActualizacion = producto.FechaActualizacion
         };
@@ -155,6 +161,9 @@ public class MySqlProductoRepository : IProductoRepository
                                   marca_id = @marcaId,
                                   creado_por_usuario_id = @creadoPorUsuarioId,
                                   es_visible = @esVisible,
+                                  imagen_url = @imagenUrl,
+                                  imagen_public_id = @imagenPublicId,
+                                  imagen_resource_type = @imagenResourceType,
                                   fecha_actualizacion = @fechaActualizacion
                               WHERE id = @id;
                               """;
@@ -167,6 +176,9 @@ public class MySqlProductoRepository : IProductoRepository
         command.Parameters.AddWithValue("@marcaId", producto.MarcaId);
         command.Parameters.AddWithValue("@creadoPorUsuarioId", (object?)producto.CreadoPorUsuarioId ?? DBNull.Value);
         command.Parameters.AddWithValue("@esVisible", producto.EsVisible);
+        command.Parameters.AddWithValue("@imagenUrl", (object?)producto.ImagenUrl ?? DBNull.Value);
+        command.Parameters.AddWithValue("@imagenPublicId", (object?)producto.ImagenPublicId ?? DBNull.Value);
+        command.Parameters.AddWithValue("@imagenResourceType", (object?)producto.ImagenResourceType ?? DBNull.Value);
         command.Parameters.AddWithValue("@fechaActualizacion", (object?)producto.FechaActualizacion ?? DBNull.Value);
 
         int affectedRows = await command.ExecuteNonQueryAsync(cancellationToken);
@@ -227,6 +239,9 @@ public class MySqlProductoRepository : IProductoRepository
         int marcaIdOrdinal = reader.GetOrdinal("marca_id");
         int creadoPorUsuarioIdOrdinal = reader.GetOrdinal("creado_por_usuario_id");
         int esVisibleOrdinal = reader.GetOrdinal("es_visible");
+        int imagenUrlOrdinal = reader.GetOrdinal("imagen_url");
+        int imagenPublicIdOrdinal = reader.GetOrdinal("imagen_public_id");
+        int imagenResourceTypeOrdinal = reader.GetOrdinal("imagen_resource_type");
         int fechaCreacionOrdinal = reader.GetOrdinal("fecha_creacion");
         int fechaActualizacionOrdinal = reader.GetOrdinal("fecha_actualizacion");
 
@@ -241,6 +256,9 @@ public class MySqlProductoRepository : IProductoRepository
             MarcaId = reader.GetInt32(marcaIdOrdinal),
             CreadoPorUsuarioId = reader.IsDBNull(creadoPorUsuarioIdOrdinal) ? null : reader.GetInt32(creadoPorUsuarioIdOrdinal),
             EsVisible = reader.GetBoolean(esVisibleOrdinal),
+            ImagenUrl = reader.IsDBNull(imagenUrlOrdinal) ? null : reader.GetString(imagenUrlOrdinal),
+            ImagenPublicId = reader.IsDBNull(imagenPublicIdOrdinal) ? null : reader.GetString(imagenPublicIdOrdinal),
+            ImagenResourceType = reader.IsDBNull(imagenResourceTypeOrdinal) ? null : reader.GetString(imagenResourceTypeOrdinal),
             FechaCreacion = reader.GetDateTime(fechaCreacionOrdinal),
             FechaActualizacion = reader.IsDBNull(fechaActualizacionOrdinal) ? null : reader.GetDateTime(fechaActualizacionOrdinal)
         };

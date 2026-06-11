@@ -11,6 +11,7 @@ public class GetProductoDTO
     public int MarcaId { get; set; }
     public int? CreadoPorUsuarioId { get; set; }
     public bool EsVisible { get; set; }
+    public string? ImagenUrl { get; set; }
     public DateTime FechaCreacion { get; set; }
     public DateTime? FechaActualizacion { get; set; }
     public GetProductoDTO() { }
@@ -26,6 +27,19 @@ public class PostProductoDTO
     public int MarcaId { get; set; }
     public bool? EsVisible { get; set; }
     public PostProductoDTO() { }
+}
+
+public class PostProductoConImagenDTO
+{
+    public required string Nombre { get; set; }
+    public string? Descripcion { get; set; }
+    public decimal Precio { get; set; }
+    public int Stock { get; set; }
+    public int CategoriaId { get; set; }
+    public int MarcaId { get; set; }
+    public bool? EsVisible { get; set; }
+    public IFormFile? Imagen { get; set; }
+    public PostProductoConImagenDTO() { }
 }
 
 public class PutProductoDTO

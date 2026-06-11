@@ -9,6 +9,8 @@ public enum ProductoOperationError
     Conflict,
     NotFound,
     RelatedNotFound,
+    UnsupportedType,
+    FileTooLarge,
     Unexpected
 }
 
@@ -48,6 +50,18 @@ public class ProductoOperationResult
         new()
         {
             Error = ProductoOperationError.RelatedNotFound
+        };
+
+    public static ProductoOperationResult UnsupportedTypeError() =>
+        new()
+        {
+            Error = ProductoOperationError.UnsupportedType
+        };
+
+    public static ProductoOperationResult FileTooLargeError() =>
+        new()
+        {
+            Error = ProductoOperationError.FileTooLarge
         };
 
     public static ProductoOperationResult UnexpectedError() =>
