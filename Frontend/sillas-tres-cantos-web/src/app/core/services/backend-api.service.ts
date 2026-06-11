@@ -155,11 +155,7 @@ export class BackendApiService {
     return this.http.get<Producto>(`${API_BASE_URL}/productos/${id}`, { params });
   }
 
-  createProducto(payload: PostProducto): Observable<Producto> {
-    return this.http.post<Producto>(`${API_BASE_URL}/productos`, payload);
-  }
-
-  createProductoConImagen(payload: PostProducto, imagen: File): Observable<Producto> {
+  createProducto(payload: PostProducto, imagen?: File | null): Observable<Producto> {
     const formData = new FormData();
     formData.append('Nombre', payload.nombre);
     formData.append('Descripcion', payload.descripcion ?? '');
@@ -172,8 +168,11 @@ export class BackendApiService {
       formData.append('EsVisible', String(payload.esVisible));
     }
 
-    formData.append('Imagen', imagen, imagen.name);
-    return this.http.post<Producto>(`${API_BASE_URL}/productos/with-imagen`, formData);
+    if (imagen) {
+      formData.append('Imagen', imagen, imagen.name);
+    }
+
+    return this.http.post<Producto>(`${API_BASE_URL}/productos`, formData);
   }
 
   updateProducto(id: number, payload: PutProducto): Observable<void> {

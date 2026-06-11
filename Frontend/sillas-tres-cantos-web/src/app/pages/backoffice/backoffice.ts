@@ -221,11 +221,7 @@ export class Backoffice implements OnInit {
     }
 
     try {
-      const request = this.selectedProductoImagen
-        ? this.api.createProductoConImagen(this.newProducto, this.selectedProductoImagen)
-        : this.api.createProducto(this.newProducto);
-
-      await firstValueFrom(request);
+      await firstValueFrom(this.api.createProducto(this.newProducto, this.selectedProductoImagen));
       this.resetNewProductoForm();
       await this.cargarProductos();
       this.statusMessage.set('Producto creado.');
