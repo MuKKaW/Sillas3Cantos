@@ -114,38 +114,9 @@ public class ProductosController : ControllerBase
 
     [HttpPost]
     [Authorize]
-    public async Task<ActionResult<GetProductoDTO>> PostProducto([FromBody] PostProductoDTO producto)
-    {
-        if (!TryGetUsuarioAutenticadoId(out int usuarioId))
-        {
-            return Unauthorized("No se pudo identificar al usuario autenticado. Vuelve a iniciar sesion.");
-        }
-
-        ProductoOperationResult resultado = await _productoService.PostProductoAsync(producto, usuarioId);
-        if (!resultado.IsSuccess)
-        {
-            return resultado.Error switch
-            {
-                ProductoOperationError.Validation => BadRequest("Los datos del producto no son validos."),
-                ProductoOperationError.RelatedNotFound => BadRequest("La categoria o la marca indicada no existe."),
-                ProductoOperationError.Conflict => Conflict("Existe un conflicto con los datos del producto."),
-                _ => StatusCode(StatusCodes.Status500InternalServerError)
-            };
-        }
-
-        if (resultado.Producto is null)
-        {
-            return StatusCode(StatusCodes.Status500InternalServerError);
-        }
-
-        return CreatedAtAction(nameof(GetProductoById), new { id = resultado.Producto.Id }, resultado.Producto);
-    }
-
-    [HttpPost("with-imagen")]
-    [Authorize]
     [Consumes("multipart/form-data")]
-    public async Task<ActionResult<GetProductoDTO>> PostProductoConImagen(
-        [FromForm] PostProductoConImagenDTO producto,
+    public async Task<ActionResult<GetProductoDTO>> PostProducto(
+        [FromForm] PostProductoDTO producto,
         CancellationToken cancellationToken = default)
     {
         if (!TryGetUsuarioAutenticadoId(out int usuarioId))
@@ -153,9 +124,7 @@ public class ProductosController : ControllerBase
             return Unauthorized("No se pudo identificar al usuario autenticado. Vuelve a iniciar sesion.");
         }
 
-        ProductoOperationResult resultado =
-            await _productoService.PostProductoConImagenAsync(producto, usuarioId, cancellationToken);
-
+        ProductoOperationResult resultado = await _productoService.PostProductoAsync(producto, usuarioId, cancellationToken);
         if (!resultado.IsSuccess)
         {
             return resultado.Error switch

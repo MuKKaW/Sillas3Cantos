@@ -79,83 +79,16 @@ public class ProductoService : IProductoService
         return MapToGetProductoDTO(existente);
     }
 
-    public async Task<ProductoOperationResult> PostProductoAsync(PostProductoDTO producto, int creadoPorUsuarioId)
-    {
-        string nombre = producto.Nombre?.Trim() ?? string.Empty;
-        string? descripcion = NormalizeOptional(producto.Descripcion);
-        bool esVisible = producto.EsVisible ?? true;
-
-        if (!IsValidNombre(nombre)
-            || !IsValidDescripcion(descripcion)
-            || !IsValidPrecio(producto.Precio)
-            || !IsValidStock(producto.Stock)
-            || !IsValidForeignId(creadoPorUsuarioId)
-            || !IsValidForeignId(producto.CategoriaId)
-            || !IsValidForeignId(producto.MarcaId))
-        {
-            return ProductoOperationResult.ValidationError();
-        }
-
-        bool categoriaExiste = await _productoRepository.CategoriaExistsAsync(producto.CategoriaId);
-        bool marcaExiste = await _productoRepository.MarcaExistsAsync(producto.MarcaId);
-
-        if (!categoriaExiste || !marcaExiste)
-        {
-            return ProductoOperationResult.RelatedNotFoundError();
-        }
-
-        Producto nuevoProducto = new()
-        {
-            Id = 0,
-            Nombre = nombre,
-            Descripcion = descripcion,
-            Precio = producto.Precio,
-            Stock = producto.Stock,
-            CategoriaId = producto.CategoriaId,
-            MarcaId = producto.MarcaId,
-            CreadoPorUsuarioId = creadoPorUsuarioId,
-            EsVisible = esVisible,
-            ImagenUrl = null,
-            ImagenPublicId = null,
-            ImagenResourceType = null,
-            FechaCreacion = DateTime.UtcNow,
-            FechaActualizacion = null
-        };
-
-        Producto? creado;
-        try
-        {
-            creado = await _productoRepository.CreateProductoAsync(nuevoProducto);
-        }
-        catch (MySqlException ex) when (IsDuplicateKey(ex))
-        {
-            return ProductoOperationResult.ConflictError();
-        }
-        catch (MySqlException ex) when (IsForeignKeyViolation(ex))
-        {
-            return ProductoOperationResult.RelatedNotFoundError();
-        }
-        catch (MySqlException)
-        {
-            return ProductoOperationResult.UnexpectedError();
-        }
-
-        if (creado is null)
-        {
-            return ProductoOperationResult.UnexpectedError();
-        }
-
-        return ProductoOperationResult.Success(MapToGetProductoDTO(creado));
-    }
-
-    public async Task<ProductoOperationResult> PostProductoConImagenAsync(
-        PostProductoConImagenDTO producto,
+    public async Task<ProductoOperationResult> PostProductoAsync(
+        PostProductoDTO producto,
         int creadoPorUsuarioId,
         CancellationToken cancellationToken = default)
     {
         string nombre = producto.Nombre?.Trim() ?? string.Empty;
         string? descripcion = NormalizeOptional(producto.Descripcion);
         bool esVisible = producto.EsVisible ?? true;
+        IFormFile? imagen = producto.Imagen;
+        bool tieneImagen = imagen is not null && imagen.Length > 0;
 
         if (!IsValidNombre(nombre)
             || !IsValidDescripcion(descripcion)
@@ -164,18 +97,17 @@ public class ProductoService : IProductoService
             || !IsValidForeignId(creadoPorUsuarioId)
             || !IsValidForeignId(producto.CategoriaId)
             || !IsValidForeignId(producto.MarcaId)
-            || producto.Imagen is null
-            || producto.Imagen.Length == 0)
+            || (imagen is not null && imagen.Length == 0))
         {
             return ProductoOperationResult.ValidationError();
         }
 
-        if (producto.Imagen.Length > GetMaxImageSizeBytes())
+        if (tieneImagen && imagen!.Length > GetMaxImageSizeBytes())
         {
             return ProductoOperationResult.FileTooLargeError();
         }
 
-        if (!IsSupportedImage(producto.Imagen))
+        if (tieneImagen && !IsSupportedImage(imagen!))
         {
             return ProductoOperationResult.UnsupportedTypeError();
         }
@@ -191,7 +123,10 @@ public class ProductoService : IProductoService
         StoredProductoImagen? storedImagen = null;
         try
         {
-            storedImagen = await _productoImagenStorageService.UploadAsync(producto.Imagen, cancellationToken);
+            if (tieneImagen)
+            {
+                storedImagen = await _productoImagenStorageService.UploadAsync(imagen!, cancellationToken);
+            }
 
             Producto nuevoProducto = new()
             {
@@ -204,9 +139,9 @@ public class ProductoService : IProductoService
                 MarcaId = producto.MarcaId,
                 CreadoPorUsuarioId = creadoPorUsuarioId,
                 EsVisible = esVisible,
-                ImagenUrl = storedImagen.Url,
-                ImagenPublicId = storedImagen.PublicId,
-                ImagenResourceType = storedImagen.ResourceType,
+                ImagenUrl = storedImagen?.Url,
+                ImagenPublicId = storedImagen?.PublicId,
+                ImagenResourceType = storedImagen?.ResourceType,
                 FechaCreacion = DateTime.UtcNow,
                 FechaActualizacion = null
             };
