@@ -96,6 +96,13 @@
       <div class="product-grid">
         @for (producto of productos; track producto.id) {
           <article class="product-card">
+            <div class="product-image-shell" [class.empty]="!producto.imagenUrl">
+              @if (producto.imagenUrl) {
+                <img [src]="producto.imagenUrl" [alt]="producto.nombre" loading="lazy" />
+              } @else {
+                <span>{{ categoriaNombre(producto.categoriaId) }}</span>
+              }
+            </div>
             <div>
               <p class="product-brand">{{ marcaNombre(producto.marcaId) }}</p>
               <h3>{{ producto.nombre }}</h3>
@@ -140,6 +147,10 @@
       (click)="$event.stopPropagation()"
     >
       <button type="button" class="modal-close" aria-label="Cerrar ficha" (click)="cerrarFichaProducto()">×</button>
+
+      @if (selectedProducto.imagenUrl) {
+        <img class="product-modal-image" [src]="selectedProducto.imagenUrl" [alt]="selectedProducto.nombre" />
+      }
 
       <div class="product-modal-copy">
         <p class="eyebrow">Ficha de producto</p>

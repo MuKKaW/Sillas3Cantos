@@ -150,6 +150,32 @@ td select {
   margin-bottom: 0.35rem;
 }
 
+.image-field small {
+  color: var(--ink-300);
+  font-size: 0.78rem;
+}
+
+.product-thumb,
+.product-thumb-placeholder {
+  display: block;
+  width: 64px;
+  height: 48px;
+  border-radius: 8px;
+}
+
+.product-thumb {
+  object-fit: cover;
+  border: 1px solid color-mix(in oklab, var(--surface-2) 82%, transparent);
+  background: #eef5fc;
+}
+
+.product-thumb-placeholder {
+  display: grid;
+  place-items: center;
+  color: var(--ink-300);
+  background: #eef5fc;
+}
+
 .file-list {
   list-style: none;
   padding: 0;

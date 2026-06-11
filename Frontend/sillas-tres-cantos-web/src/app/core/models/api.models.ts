@@ -104,6 +104,7 @@ export interface Producto {
   marcaId: number;
   creadoPorUsuarioId?: number | null;
   esVisible: boolean;
+  imagenUrl?: string | null;
   fechaCreacion: string;
   fechaActualizacion?: string | null;
 }

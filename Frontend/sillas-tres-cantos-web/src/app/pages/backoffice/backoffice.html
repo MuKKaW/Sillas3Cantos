@@ -161,6 +161,18 @@
           <option [ngValue]="false">No</option>
         </select>
       </div>
+      <div class="field image-field">
+        <label>Imagen</label>
+        <input
+          #productoImagenInput
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          (change)="onProductoImagenSelected($event)"
+        />
+        @if (selectedProductoImagen) {
+          <small>{{ selectedProductoImagen.name }}</small>
+        }
+      </div>
     </div>
     <div class="field">
       <label>Descripcion</label>
@@ -203,6 +215,7 @@
                   <thead>
                     <tr>
                       <th>ID</th>
+                      <th>Imagen</th>
                       <th>Nombre</th>
                       <th>Precio</th>
                       <th>Stock</th>
@@ -216,6 +229,13 @@
                     @for (producto of grupo.productos; track producto.id) {
                       <tr>
                         <td>{{ producto.id }}</td>
+                        <td>
+                          @if (producto.imagenUrl) {
+                            <img class="product-thumb" [src]="producto.imagenUrl" [alt]="producto.nombre" loading="lazy" />
+                          } @else {
+                            <span class="product-thumb-placeholder">-</span>
+                          }
+                        </td>
                         <td>
                           @if (editProductoId === producto.id) {
                             <input [(ngModel)]="editProducto.nombre" />

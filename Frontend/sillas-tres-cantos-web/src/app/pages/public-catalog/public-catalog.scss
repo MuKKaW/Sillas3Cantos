@@ -176,6 +176,32 @@ h3 {
   padding: 1rem;
 }
 
+.product-image-shell {
+  display: block;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #e5eff9;
+}
+
+.product-image-shell img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.product-image-shell.empty {
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  color: #41607d;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-align: center;
+  text-transform: uppercase;
+}
+
 .product-brand {
   margin-bottom: 0.5rem;
   color: #1d64c8;
@@ -231,6 +257,16 @@ address {
 address a {
   color: #ffffff;
   text-decoration: none;
+}
+
+.product-modal-image {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  display: block;
+  margin-bottom: 1rem;
+  border-radius: 8px;
+  background: #e5eff9;
 }
 
 @media (min-width: 700px) {

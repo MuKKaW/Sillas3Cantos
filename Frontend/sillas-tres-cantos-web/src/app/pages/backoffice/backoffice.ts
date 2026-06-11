@@ -1,5 +1,5 @@
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -38,6 +38,8 @@ interface ProductosCategoriaGrupo {
   styleUrl: './backoffice.scss',
 })
 export class Backoffice implements OnInit {
+  @ViewChild('productoImagenInput') private productoImagenInput?: ElementRef<HTMLInputElement>;
+
   private readonly api = inject(BackendApiService);
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
@@ -114,6 +116,7 @@ export class Backoffice implements OnInit {
   productoArchivosActual: ProductoArchivo[] = [];
   productoArchivosActualId = 0;
   selectedUploadFile: File | null = null;
+  selectedProductoImagen: File | null = null;
 
   externosQuery = 'chair';
   externosLimit = 8;
@@ -218,16 +221,12 @@ export class Backoffice implements OnInit {
     }
 
     try {
-      await firstValueFrom(this.api.createProducto(this.newProducto));
-      this.newProducto = {
-        nombre: '',
-        descripcion: '',
-        precio: 0,
-        stock: 0,
-        categoriaId: 0,
-        marcaId: 0,
-        esVisible: true
-      };
+      const request = this.selectedProductoImagen
+        ? this.api.createProductoConImagen(this.newProducto, this.selectedProductoImagen)
+        : this.api.createProducto(this.newProducto);
+
+      await firstValueFrom(request);
+      this.resetNewProductoForm();
       await this.cargarProductos();
       this.statusMessage.set('Producto creado.');
     } catch (error) {
@@ -594,6 +593,11 @@ export class Backoffice implements OnInit {
     this.selectedUploadFile = file;
   }
 
+  onProductoImagenSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.selectedProductoImagen = input.files?.[0] ?? null;
+  }
+
   async subirArchivoProducto(): Promise<void> {
     if (!this.productoArchivosActualId || !this.selectedUploadFile) {
       this.errorMessage.set('Selecciona producto y archivo antes de subir.');
@@ -676,5 +680,22 @@ export class Backoffice implements OnInit {
 
   private abrirCategoriasConProductos(): void {
     this.expandedCategoriaIds.set(new Set(this.productos.map((producto) => producto.categoriaId || 0)));
+  }
+
+  private resetNewProductoForm(): void {
+    this.newProducto = {
+      nombre: '',
+      descripcion: '',
+      precio: 0,
+      stock: 0,
+      categoriaId: 0,
+      marcaId: 0,
+      esVisible: true
+    };
+    this.selectedProductoImagen = null;
+
+    if (this.productoImagenInput) {
+      this.productoImagenInput.nativeElement.value = '';
+    }
   }
 }
