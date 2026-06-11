@@ -1,9 +1,17 @@
 <section class="panel hero">
-  <p class="eyebrow">Backoffice Angular</p>
-  <h1>Gestion total conectada a la API</h1>
-  <p class="muted">
-    CRUD de productos, categorias, marcas, usuarios (solo SuperAdmin), gestion de archivos y busqueda externa.
-  </p>
+  <div class="hero-header">
+    <div>
+      <p class="eyebrow">Portal empleados</p>
+      <h1>Gestión interna del catálogo</h1>
+      <p class="muted">
+        Productos, categorías, marcas, documentación y cuentas autorizadas.
+      </p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="btn ghost" (click)="goHome()">Volver a la web</button>
+      <button type="button" class="btn ghost" (click)="logout()">Cerrar sesión</button>
+    </div>
+  </div>
 
   <div class="tabs">
     <button type="button" class="tab-btn" [class.active]="activeTab() === 'productos'" (click)="setTab('productos')">
@@ -25,6 +33,17 @@
     }
   </div>
 </section>
+
+@if (errorMessage()) {
+  <aside class="app-alert" role="alert" aria-live="assertive">
+    <div class="alert-mark">!</div>
+    <div>
+      <strong>Algo no ha ido bien</strong>
+      <p>{{ errorMessage() }}</p>
+    </div>
+    <button type="button" aria-label="Cerrar alerta" (click)="clearError()">×</button>
+  </aside>
+}
 
 @if (loading()) {
   <p class="status">Cargando backoffice...</p>
@@ -89,12 +108,21 @@
     <div class="actions">
       <label class="switch">
         <input type="checkbox" [(ngModel)]="filtroProductosIncludeHidden" />
-        <span>includeHidden</span>
+        <span>Mostrar ocultos</span>
       </label>
       <button type="button" class="btn" (click)="cargarProductos()">Recargar productos</button>
     </div>
+  </section>
 
-    <h3>Crear producto</h3>
+  <section class="panel create-product-panel">
+    <div class="create-product-heading">
+      <div>
+        <p class="eyebrow">Alta de catálogo</p>
+        <h3>Crear producto</h3>
+        <p class="muted">Rellena los datos básicos y publica el producto cuando esté listo para mostrarse.</p>
+      </div>
+      <span class="create-badge">Nuevo</span>
+    </div>
     <div class="field-grid">
       <div class="field">
         <label>Nombre</label>
@@ -138,129 +166,161 @@
       <label>Descripcion</label>
       <textarea [(ngModel)]="newProducto.descripcion"></textarea>
     </div>
-    <button type="button" class="btn alt" (click)="crearProducto()">Crear producto</button>
-  </section>
-
-  <section class="panel table-panel">
-    <h3>Listado de productos</h3>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Nombre</th>
-            <th>Precio</th>
-            <th>Stock</th>
-            <th>Categoria</th>
-            <th>Marca</th>
-            <th>Visible</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (producto of productos; track producto.id) {
-            <tr>
-              <td>{{ producto.id }}</td>
-              <td>
-                @if (editProductoId === producto.id) {
-                  <input [(ngModel)]="editProducto.nombre" />
-                } @else {
-                  {{ producto.nombre }}
-                }
-              </td>
-              <td>
-                @if (editProductoId === producto.id) {
-                  <input type="number" [(ngModel)]="editProducto.precio" />
-                } @else {
-                  {{ producto.precio | currency:'EUR':'symbol':'1.2-2' }}
-                }
-              </td>
-              <td>
-                @if (editProductoId === producto.id) {
-                  <input type="number" [(ngModel)]="editProducto.stock" />
-                } @else {
-                  {{ producto.stock }}
-                }
-              </td>
-              <td>
-                @if (editProductoId === producto.id) {
-                  <select [(ngModel)]="editProducto.categoriaId">
-                    @for (categoria of categorias; track categoria.id) {
-                      <option [ngValue]="categoria.id">{{ categoria.nombre }}</option>
-                    }
-                  </select>
-                } @else {
-                  {{ categoriaNombre(producto.categoriaId) }}
-                }
-              </td>
-              <td>
-                @if (editProductoId === producto.id) {
-                  <select [(ngModel)]="editProducto.marcaId">
-                    @for (marca of marcas; track marca.id) {
-                      <option [ngValue]="marca.id">{{ marca.nombre }}</option>
-                    }
-                  </select>
-                } @else {
-                  {{ marcaNombre(producto.marcaId) }}
-                }
-              </td>
-              <td>
-                @if (editProductoId === producto.id) {
-                  <select [(ngModel)]="editProducto.esVisible">
-                    <option [ngValue]="true">Si</option>
-                    <option [ngValue]="false">No</option>
-                  </select>
-                } @else {
-                  {{ producto.esVisible ? 'Si' : 'No' }}
-                }
-              </td>
-              <td class="actions-cell">
-                @if (editProductoId === producto.id) {
-                  <button type="button" class="btn" (click)="guardarEdicionProducto(producto.id)">Guardar</button>
-                  <button type="button" class="btn ghost" (click)="cancelarEdicionProducto()">Cancelar</button>
-                } @else {
-                  <button type="button" class="btn ghost" (click)="empezarEdicionProducto(producto)">Editar</button>
-                  <button type="button" class="btn warn" (click)="cargarArchivosProducto(producto.id)">Archivos</button>
-                  <button type="button" class="btn danger" (click)="eliminarProducto(producto.id)">Borrar</button>
-                }
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-  </section>
-
-  <section class="panel">
-    <div class="panel-title">
-      <h3>Archivos del producto</h3>
-      <span class="pill">
-        @if (productoArchivosActualId > 0) { Producto {{ productoArchivosActualId }} } @else { Selecciona producto }
-      </span>
-    </div>
     <div class="actions">
-      <input type="file" (change)="onFileSelected($event)" />
-      <button type="button" class="btn" (click)="subirArchivoProducto()" [disabled]="uploading()">Subir archivo</button>
+      <button type="button" class="btn alt" (click)="crearProducto()">Crear producto</button>
     </div>
-    @if (productoArchivosActual.length === 0) {
-      <p class="muted">No hay archivos cargados para este producto.</p>
+  </section>
+
+  <section class="panel table-panel product-list-panel">
+    <div class="panel-title">
+      <h3>Productos por categoría</h3>
+      <span class="pill">{{ productos.length }} productos</span>
+    </div>
+
+    @if (productos.length === 0) {
+      <p class="muted">No hay productos para los filtros actuales.</p>
     } @else {
-      <ul class="file-list">
-        @for (archivo of productoArchivosActual; track archivo.id) {
-          <li>
-            <div>
-              <strong>{{ archivo.nombreOriginal }}</strong>
-              <small>{{ archivo.fechaSubida | date:'short' }} · {{ archivo.contentType }}</small>
-            </div>
-            <div class="actions">
-              <button type="button" class="btn alt" (click)="descargarArchivoProducto(archivo)">Descargar</button>
-              <button type="button" class="btn danger" (click)="eliminarArchivoProducto(archivo)">Eliminar</button>
-            </div>
-          </li>
+      <div class="category-stack">
+        @for (grupo of productosPorCategoria(); track grupo.categoriaId) {
+          <article class="category-panel">
+            <button
+              type="button"
+              class="category-toggle"
+              [class.expanded]="isCategoriaExpanded(grupo.categoriaId)"
+              [attr.aria-expanded]="isCategoriaExpanded(grupo.categoriaId)"
+              (click)="toggleCategoria(grupo.categoriaId)"
+            >
+              <span>
+                <strong>{{ grupo.categoriaNombre }}</strong>
+                <small>{{ grupo.productos.length }} productos · Stock total {{ grupo.totalStock }}</small>
+              </span>
+              <span class="chevron">⌄</span>
+            </button>
+
+            @if (isCategoriaExpanded(grupo.categoriaId)) {
+              <div class="table-wrap category-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Nombre</th>
+                      <th>Precio</th>
+                      <th>Stock</th>
+                      <th>Categoría</th>
+                      <th>Marca</th>
+                      <th>Visible</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (producto of grupo.productos; track producto.id) {
+                      <tr>
+                        <td>{{ producto.id }}</td>
+                        <td>
+                          @if (editProductoId === producto.id) {
+                            <input [(ngModel)]="editProducto.nombre" />
+                          } @else {
+                            {{ producto.nombre }}
+                          }
+                        </td>
+                        <td>
+                          @if (editProductoId === producto.id) {
+                            <input type="number" [(ngModel)]="editProducto.precio" />
+                          } @else {
+                            {{ producto.precio | currency:'EUR':'symbol':'1.2-2' }}
+                          }
+                        </td>
+                        <td>
+                          @if (editProductoId === producto.id) {
+                            <input type="number" [(ngModel)]="editProducto.stock" />
+                          } @else {
+                            {{ producto.stock }}
+                          }
+                        </td>
+                        <td>
+                          @if (editProductoId === producto.id) {
+                            <select [(ngModel)]="editProducto.categoriaId">
+                              @for (categoria of categorias; track categoria.id) {
+                                <option [ngValue]="categoria.id">{{ categoria.nombre }}</option>
+                              }
+                            </select>
+                          } @else {
+                            {{ grupo.categoriaNombre }}
+                          }
+                        </td>
+                        <td>
+                          @if (editProductoId === producto.id) {
+                            <select [(ngModel)]="editProducto.marcaId">
+                              @for (marca of marcas; track marca.id) {
+                                <option [ngValue]="marca.id">{{ marca.nombre }}</option>
+                              }
+                            </select>
+                          } @else {
+                            {{ marcaNombre(producto.marcaId) }}
+                          }
+                        </td>
+                        <td>
+                          @if (editProductoId === producto.id) {
+                            <select [(ngModel)]="editProducto.esVisible">
+                              <option [ngValue]="true">Si</option>
+                              <option [ngValue]="false">No</option>
+                            </select>
+                          } @else {
+                            {{ producto.esVisible ? 'Si' : 'No' }}
+                          }
+                        </td>
+                        <td class="actions-cell">
+                          @if (editProductoId === producto.id) {
+                            <button type="button" class="btn" (click)="guardarEdicionProducto(producto.id)">Guardar</button>
+                            <button type="button" class="btn ghost" (click)="cancelarEdicionProducto()">Cancelar</button>
+                          } @else {
+                            <button type="button" class="btn ghost" (click)="empezarEdicionProducto(producto)">Editar</button>
+                            <button type="button" class="btn warn" (click)="cargarArchivosProducto(producto.id)">Ver archivos</button>
+                            <button type="button" class="btn danger" (click)="eliminarProducto(producto.id)">Borrar</button>
+                          }
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </article>
         }
-      </ul>
+      </div>
     }
   </section>
+
+  @if (productoArchivosActualId > 0) {
+    <section class="panel files-panel">
+      <div class="panel-title">
+        <div>
+          <p class="eyebrow">Documentación</p>
+          <h3>Archivos del producto</h3>
+          <p class="muted">{{ productoArchivosActualNombre() }}</p>
+        </div>
+        <span class="pill">Producto {{ productoArchivosActualId }}</span>
+      </div>
+
+      @if (uploading()) {
+        <p class="status">Cargando archivos disponibles...</p>
+      } @else if (productoArchivosActual.length === 0) {
+        <p class="muted">Este producto no tiene archivos disponibles para descargar.</p>
+      } @else {
+        <ul class="file-list">
+          @for (archivo of productoArchivosActual; track archivo.id) {
+            <li>
+              <div>
+                <strong>{{ archivo.nombreOriginal }}</strong>
+                <small>{{ archivo.fechaSubida | date:'short' }} · {{ archivo.contentType }}</small>
+              </div>
+              <button type="button" class="btn alt" (click)="descargarArchivoProducto(archivo)">Descargar</button>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  }
 }
 
 @if (activeTab() === 'categorias') {
@@ -367,7 +427,7 @@
         <input [(ngModel)]="newMarca.paisOrigen" />
       </div>
       <div class="field">
-        <label>Anio fundacion</label>
+        <label>Año fundación</label>
         <input type="number" [(ngModel)]="newMarca.anioFundacion" />
       </div>
       <div class="field">
@@ -394,7 +454,7 @@
             <th>ID</th>
             <th>Nombre</th>
             <th>Pais</th>
-            <th>Anio</th>
+            <th>Año</th>
             <th>Visible</th>
             <th>Acciones</th>
           </tr>
@@ -588,16 +648,16 @@
 @if (activeTab() === 'externos') {
   <section class="panel">
     <div class="panel-title">
-      <h2>Busqueda externa DummyJSON</h2>
+      <h2>Búsqueda externa</h2>
       <span class="pill">{{ externosResultado?.total || 0 }} total</span>
     </div>
     <div class="field-grid">
       <div class="field">
-        <label>Query</label>
+        <label>Búsqueda</label>
         <input [(ngModel)]="externosQuery" />
       </div>
       <div class="field">
-        <label>Limit</label>
+        <label>Límite</label>
         <input type="number" min="1" max="30" [(ngModel)]="externosLimit" />
       </div>
       <div class="field">
@@ -622,7 +682,4 @@
 
 @if (statusMessage()) {
   <p class="status ok">{{ statusMessage() }}</p>
-}
-@if (errorMessage()) {
-  <p class="status error">{{ errorMessage() }}</p>
 }

@@ -1,6 +1,7 @@
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { BackendApiService } from '../../core/services/backend-api.service';
@@ -23,6 +24,13 @@ import {
 
 type BackofficeTab = 'productos' | 'categorias' | 'marcas' | 'usuarios' | 'externos';
 
+interface ProductosCategoriaGrupo {
+  categoriaId: number;
+  categoriaNombre: string;
+  productos: Producto[];
+  totalStock: number;
+}
+
 @Component({
   selector: 'app-backoffice',
   imports: [CommonModule, FormsModule, CurrencyPipe, DatePipe],
@@ -32,6 +40,7 @@ type BackofficeTab = 'productos' | 'categorias' | 'marcas' | 'usuarios' | 'exter
 export class Backoffice implements OnInit {
   private readonly api = inject(BackendApiService);
   private readonly authService = inject(AuthService);
+  private readonly router = inject(Router);
 
   readonly isSuperAdmin = this.authService.isSuperAdmin;
   readonly activeTab = signal<BackofficeTab>('productos');
@@ -39,6 +48,7 @@ export class Backoffice implements OnInit {
   readonly uploading = signal(false);
   readonly statusMessage = signal('');
   readonly errorMessage = signal('');
+  readonly expandedCategoriaIds = signal<Set<number>>(new Set<number>());
   readonly canManageUsers = computed(() => this.isSuperAdmin());
 
   categorias: Categoria[] = [];
@@ -128,7 +138,7 @@ export class Backoffice implements OnInit {
       if (this.canManageUsers()) {
         await this.cargarUsuarios();
       }
-      this.statusMessage.set('Backoffice preparado.');
+      this.statusMessage.set('Portal preparado.');
     } catch (error) {
       console.error(error);
       this.errorMessage.set('No se pudo cargar el backoffice. Revisa login/API.');
@@ -144,6 +154,19 @@ export class Backoffice implements OnInit {
     }
     this.activeTab.set(tab);
     this.statusMessage.set('');
+    this.errorMessage.set('');
+  }
+
+  async logout(): Promise<void> {
+    this.authService.logout();
+    await this.router.navigateByUrl('/');
+  }
+
+  async goHome(): Promise<void> {
+    await this.router.navigateByUrl('/');
+  }
+
+  clearError(): void {
     this.errorMessage.set('');
   }
 
@@ -180,6 +203,7 @@ export class Backoffice implements OnInit {
           })
         );
       }
+      this.abrirCategoriasConProductos();
       this.statusMessage.set(`Productos cargados (${this.productos.length}).`);
     } catch (error) {
       console.error(error);
@@ -189,7 +213,7 @@ export class Backoffice implements OnInit {
 
   async crearProducto(): Promise<void> {
     if (!this.newProducto.categoriaId || !this.newProducto.marcaId) {
-      this.errorMessage.set('Debes seleccionar categoria y marca.');
+      this.errorMessage.set('Debes seleccionar categoría y marca antes de crear el producto.');
       return;
     }
 
@@ -210,6 +234,44 @@ export class Backoffice implements OnInit {
       console.error(error);
       this.errorMessage.set('No se pudo crear el producto.');
     }
+  }
+
+  productosPorCategoria(): ProductosCategoriaGrupo[] {
+    const grupos = new Map<number, ProductosCategoriaGrupo>();
+
+    for (const producto of this.productos) {
+      const categoriaId = producto.categoriaId || 0;
+      const grupo = grupos.get(categoriaId) ?? {
+        categoriaId,
+        categoriaNombre: this.categoriaNombre(categoriaId),
+        productos: [],
+        totalStock: 0
+      };
+
+      grupo.productos.push(producto);
+      grupo.totalStock += producto.stock;
+      grupos.set(categoriaId, grupo);
+    }
+
+    return Array.from(grupos.values()).sort((a, b) =>
+      a.categoriaNombre.localeCompare(b.categoriaNombre, 'es')
+    );
+  }
+
+  isCategoriaExpanded(categoriaId: number): boolean {
+    return this.expandedCategoriaIds().has(categoriaId);
+  }
+
+  toggleCategoria(categoriaId: number): void {
+    const expanded = new Set(this.expandedCategoriaIds());
+
+    if (expanded.has(categoriaId)) {
+      expanded.delete(categoriaId);
+    } else {
+      expanded.add(categoriaId);
+    }
+
+    this.expandedCategoriaIds.set(expanded);
   }
 
   empezarEdicionProducto(producto: Producto): void {
@@ -606,5 +668,13 @@ export class Backoffice implements OnInit {
 
   marcaNombre(marcaId: number): string {
     return this.marcas.find((marca) => marca.id === marcaId)?.nombre ?? 'Sin marca';
+  }
+
+  productoArchivosActualNombre(): string {
+    return this.productos.find((producto) => producto.id === this.productoArchivosActualId)?.nombre ?? 'Producto seleccionado';
+  }
+
+  private abrirCategoriasConProductos(): void {
+    this.expandedCategoriaIds.set(new Set(this.productos.map((producto) => producto.categoriaId || 0)));
   }
 }

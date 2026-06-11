@@ -1,13 +1,45 @@
+:host {
+  display: block;
+  padding: calc(var(--header-height) + 1.75rem) 0 3.5rem;
+  scroll-margin-top: calc(var(--header-height) + 1.25rem);
+}
+
+.hero,
+.panel,
+.externos-grid,
+.status {
+  width: min(1200px, calc(100% - 2.6rem));
+  margin-inline: auto;
+}
+
 .hero {
-  margin-top: 1rem;
+  margin-top: 0;
+  padding: 1.35rem;
   background:
-    linear-gradient(140deg, rgba(50, 176, 130, 0.15), rgba(38, 160, 216, 0.12)),
+    linear-gradient(140deg, rgba(31, 111, 235, 0.13), rgba(14, 165, 233, 0.1)),
     color-mix(in oklab, var(--surface-1) 94%, transparent);
+}
+
+.hero,
+.panel,
+.externos-grid,
+.status {
+  scroll-margin-top: calc(var(--header-height) + 1.25rem);
+}
+
+.hero-header {
+  display: grid;
+  gap: 1rem;
+}
+
+.header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
 }
 
 .eyebrow {
   color: var(--accent-2);
-  letter-spacing: 0.08em;
   text-transform: uppercase;
   font-size: 0.8rem;
 }
@@ -23,20 +55,20 @@
   border: 1px solid color-mix(in oklab, var(--surface-2) 85%, transparent);
   background: #ffffff;
   color: var(--ink-200);
-  border-radius: 999px;
-  padding: 0.5rem 0.9rem;
+  border-radius: var(--button-radius);
+  padding: 0.62rem 0.95rem;
   cursor: pointer;
 }
 
 .tab-btn.active {
   background: linear-gradient(130deg, var(--accent-1), var(--accent-3));
-  color: #122b25;
+  color: #102033;
   border-color: transparent;
   font-weight: 700;
 }
 
 .panel {
-  margin-top: 1rem;
+  margin-top: 1.2rem;
 }
 
 .actions {
@@ -82,19 +114,18 @@ td {
 th:first-child,
 td:first-child {
   border-left: 1px solid color-mix(in oklab, var(--surface-2) 78%, transparent);
-  border-radius: 10px 0 0 10px;
+  border-radius: 8px 0 0 8px;
 }
 
 th:last-child,
 td:last-child {
   border-right: 1px solid color-mix(in oklab, var(--surface-2) 78%, transparent);
-  border-radius: 0 10px 10px 0;
+  border-radius: 0 8px 8px 0;
 }
 
 th {
   color: color-mix(in oklab, var(--accent-2) 78%, var(--ink-100));
   font-size: 0.78rem;
-  letter-spacing: 0.06em;
   text-transform: uppercase;
   background: color-mix(in oklab, #ffffff 92%, var(--accent-2) 8%);
 }
@@ -129,13 +160,17 @@ td select {
 
 .file-list li {
   border: 1px solid color-mix(in oklab, var(--surface-2) 75%, transparent);
-  border-radius: 12px;
+  border-radius: 8px;
   padding: 0.85rem;
   display: flex;
   justify-content: space-between;
   gap: 1rem;
   align-items: center;
   background: #ffffff;
+}
+
+.files-panel .panel-title {
+  align-items: flex-start;
 }
 
 .file-list small {
@@ -150,8 +185,30 @@ td select {
 }
 
 @media (max-width: 640px) {
+  .hero,
+  .panel,
+  .externos-grid,
+  .status {
+    width: min(100% - 1rem, 1200px);
+  }
+
+  .hero {
+    margin-top: 0;
+  }
+
   .file-list li {
     flex-direction: column;
     align-items: flex-start;
+  }
+}
+
+@media (min-width: 720px) {
+  .hero-header {
+    grid-template-columns: 1fr auto;
+    align-items: start;
+  }
+
+  .header-actions {
+    justify-content: flex-end;
   }
 }

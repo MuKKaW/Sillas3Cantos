@@ -1,27 +1,28 @@
 <div class="app-shell">
-  <header class="main-header">
-    <a routerLink="/" class="brand">
-      <span class="brand-mark">S3C</span>
-      <span class="brand-text">Sillas Tres Cantos</span>
+  <header class="site-header" [class.public-header]="showHeaderPhone()">
+    <a routerLink="/" class="brand" aria-label="Volver a ORTOPEDIA PUEBLOS 3C">
+      ORTOPEDIA PUEBLOS 3C
     </a>
-
-    <nav class="main-nav">
-      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Catalogo</a>
-      <a routerLink="/backoffice" routerLinkActive="active">Backoffice</a>
-      @if (!isAuthenticated()) {
-        <a routerLink="/login" routerLinkActive="active">Login</a>
-      }
-    </nav>
-
-    <div class="session-box">
-      <span class="role-chip" [class.superadmin]="isSuperAdmin()">{{ roleLabel() }}</span>
-      @if (isAuthenticated()) {
-        <button type="button" class="ghost-btn" (click)="logout()">Cerrar sesion</button>
-      }
-    </div>
+    @if (showHeaderPhone()) {
+      <a class="header-call" href="tel:+34918033019" aria-label="Llamar al 918 033 019">
+        <span class="header-call-number">918 033 019</span>
+      </a>
+    }
   </header>
 
-  <main class="main-content">
+  <main>
     <router-outlet />
   </main>
+
+  @if (showPublicFooter()) {
+    <footer class="site-footer">
+      <div>
+        <a routerLink="/" fragment="conocenos">Conócenos</a>
+        <a routerLink="/" fragment="contacto">Contacto</a>
+        <a routerLink="/legal" fragment="aviso-legal">Aviso legal</a>
+        <a routerLink="/legal" fragment="privacidad">Privacidad</a>
+      </div>
+      <a routerLink="/login" class="employee-link">Portal empleados</a>
+    </footer>
+  }
 </div>

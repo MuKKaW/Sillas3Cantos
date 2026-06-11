@@ -1,21 +1,29 @@
-import { Component, computed, inject } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { AuthService } from './core/services/auth.service';
+import { Component, computed, inject, signal } from '@angular/core';
+import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
+import { filter } from 'rxjs';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [RouterOutlet, RouterLink],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
 export class App {
-  private readonly authService = inject(AuthService);
+  private readonly router = inject(Router);
+  private readonly currentUrl = signal(this.router.url);
 
-  readonly isAuthenticated = this.authService.isAuthenticated;
-  readonly isSuperAdmin = this.authService.isSuperAdmin;
-  readonly roleLabel = computed(() => this.authService.role() || 'Invitado');
+  readonly currentPath = computed(() => this.currentUrl().split('?')[0].split('#')[0]);
+  readonly isPublicLanding = computed(() => {
+    const path = this.currentPath();
+    return path === '' || path === '/';
+  });
+  readonly isPublicPage = computed(() => this.isPublicLanding() || this.currentPath() === '/legal');
+  readonly showHeaderPhone = this.isPublicLanding;
+  readonly showPublicFooter = this.isPublicPage;
 
-  logout(): void {
-    this.authService.logout();
+  constructor() {
+    this.router.events
+      .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
+      .subscribe((event) => this.currentUrl.set(event.urlAfterRedirects));
   }
 }

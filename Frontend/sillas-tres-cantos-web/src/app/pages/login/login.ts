@@ -1,13 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-login',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './login.html',
   styleUrl: './login.scss',
 })
@@ -34,7 +34,7 @@ export class Login {
         })
       );
 
-      this.successMessage.set('Login correcto. Redirigiendo a backoffice...');
+      this.successMessage.set('Acceso correcto. Redirigiendo al portal...');
       await this.router.navigateByUrl('/backoffice');
     } catch (error) {
       console.error(error);
@@ -42,16 +42,5 @@ export class Login {
     } finally {
       this.loading.set(false);
     }
-  }
-
-  usarCredencialesDemo(tipo: 'admin' | 'user'): void {
-    if (tipo === 'admin') {
-      this.username = 'admin';
-      this.password = 'Admin12345!';
-      return;
-    }
-
-    this.username = 'user';
-    this.password = 'User12345!';
   }
 }
