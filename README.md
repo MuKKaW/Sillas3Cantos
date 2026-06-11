@@ -3,10 +3,23 @@
 ## Requisitos
 - Docker Desktop en ejecucion
 - .NET 8 SDK
+- Node.js 20+ y npm
 
 ## Puertos configurados
 - API (contenedor): `8311`
 - MySQL (host -> contenedor): `1138 -> 3306`
+
+## Frontend
+Desde la raiz del repositorio:
+```powershell
+npm ci
+npm start
+```
+
+Compilar frontend:
+```powershell
+npm run build
+```
 
 ## Levantar API y BBDD con Docker Compose
 ```powershell
