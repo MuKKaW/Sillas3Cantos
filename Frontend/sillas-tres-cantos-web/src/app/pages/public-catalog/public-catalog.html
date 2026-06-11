@@ -1,0 +1,210 @@
+<section class="landing-hero" id="conocenos">
+  <img class="hero-image" src="/images/landing-showroom.png" alt="Sillas de ruedas y ayudas de movilidad en un showroom luminoso" />
+  <div class="hero-shade"></div>
+  <div class="hero-content">
+    <p class="eyebrow">Ortopedia y movilidad en Tres Cantos</p>
+    <h1>ORTOPEDIA PUEBLOS 3C</h1>
+    <p>
+      Sillas de ruedas, ayudas técnicas y soluciones de descanso con atención cercana,
+      catálogo actualizado y asesoramiento para cada situación.
+    </p>
+    <div class="hero-actions">
+      <a class="button button-primary" href="#catalogo">Ver catálogo</a>
+      <a class="button button-secondary" href="tel:+34918033019">918 033 019</a>
+    </div>
+  </div>
+</section>
+
+<section class="trust-band" aria-label="Servicios destacados">
+  <div>
+    <strong>Venta y alquiler</strong>
+    <span>Opciones para necesidades puntuales o permanentes.</span>
+  </div>
+  <div>
+    <strong>Entrega local</strong>
+    <span>Soluciones pensadas para Tres Cantos y alrededores.</span>
+  </div>
+  <div>
+    <strong>Soporte técnico</strong>
+    <span>Ajuste, revisión y mantenimiento de productos.</span>
+  </div>
+</section>
+
+<section class="catalog-section" id="catalogo">
+  <div class="content-section">
+    <div class="section-heading">
+      <p class="eyebrow">Catálogo</p>
+      <h2>Consulta productos disponibles</h2>
+      <p>
+        Filtra por familia o marca y abre la ficha para ver detalles, precio y documentación asociada.
+      </p>
+    </div>
+
+    <div class="filter-bar">
+      <div class="field">
+        <label for="filtroNombre">Producto</label>
+        <input id="filtroNombre" [(ngModel)]="filtroNombre" placeholder="Buscar por nombre" />
+      </div>
+
+      <div class="field">
+        <label for="filtroCategoria">Categoría</label>
+        <select id="filtroCategoria" [(ngModel)]="filtroCategoriaId">
+          <option [ngValue]="0">Todas</option>
+          @for (categoria of categorias; track categoria.id) {
+            <option [ngValue]="categoria.id">{{ categoria.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="filtroMarca">Marca</label>
+        <select id="filtroMarca" [(ngModel)]="filtroMarcaId">
+          <option [ngValue]="0">Todas</option>
+          @for (marca of marcas; track marca.id) {
+            <option [ngValue]="marca.id">{{ marca.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="filtroOrden">Orden</label>
+        <select id="filtroOrden" [(ngModel)]="orderAsc">
+          <option [ngValue]="true">A-Z</option>
+          <option [ngValue]="false">Z-A</option>
+        </select>
+      </div>
+
+      <div class="filter-actions">
+        <button type="button" class="button button-primary" (click)="aplicarFiltros()">Filtrar</button>
+        <button type="button" class="button button-quiet" (click)="limpiarFiltros()">Limpiar</button>
+      </div>
+    </div>
+
+    @if (loadingCatalogo()) {
+      <p class="status">Cargando catálogo...</p>
+    }
+
+    @if (errorMessage()) {
+      <p class="status error">{{ errorMessage() }}</p>
+    }
+
+    @if (!loadingCatalogo() && productos.length === 0 && !errorMessage()) {
+      <p class="status">No hay productos con esos filtros. Prueba con otra búsqueda.</p>
+    }
+
+    @if (productos.length > 0) {
+      <div class="product-grid">
+        @for (producto of productos; track producto.id) {
+          <article class="product-card">
+            <div>
+              <p class="product-brand">{{ marcaNombre(producto.marcaId) }}</p>
+              <h3>{{ producto.nombre }}</h3>
+              <p>{{ producto.descripcion || 'Producto disponible bajo consulta en tienda.' }}</p>
+            </div>
+            <div class="product-meta">
+              <span>{{ categoriaNombre(producto.categoriaId) }}</span>
+              <strong>{{ producto.precio | currency:'EUR':'symbol':'1.2-2' }}</strong>
+            </div>
+            <button type="button" class="card-link" (click)="seleccionarProducto(producto)">Ver ficha</button>
+          </article>
+        }
+      </div>
+    }
+  </div>
+</section>
+
+<section class="content-section services-section">
+  <div class="section-heading">
+    <p class="eyebrow">Qué hacemos</p>
+    <h2>Soluciones principales</h2>
+  </div>
+
+  <div class="service-grid">
+    @for (service of services; track service.title) {
+      <article class="service-card">
+        <span class="service-icon" aria-hidden="true">{{ service.icon }}</span>
+        <h3>{{ service.title }}</h3>
+        <p>{{ service.text }}</p>
+      </article>
+    }
+  </div>
+</section>
+
+@if (selectedProducto) {
+  <section class="product-modal-backdrop" role="presentation" (click)="cerrarFichaProducto()">
+    <article
+      class="product-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="productModalTitle"
+      (click)="$event.stopPropagation()"
+    >
+      <button type="button" class="modal-close" aria-label="Cerrar ficha" (click)="cerrarFichaProducto()">×</button>
+
+      <div class="product-modal-copy">
+        <p class="eyebrow">Ficha de producto</p>
+        <h2 id="productModalTitle">{{ selectedProducto.nombre }}</h2>
+        <p class="muted">{{ selectedProducto.descripcion || 'Información disponible en tienda.' }}</p>
+      </div>
+
+      <dl class="product-modal-summary">
+        <div>
+          <dt>Precio</dt>
+          <dd>{{ selectedProducto.precio | currency:'EUR':'symbol':'1.2-2' }}</dd>
+        </div>
+        <div>
+          <dt>Categoría</dt>
+          <dd>{{ categoriaNombre(selectedProducto.categoriaId) }}</dd>
+        </div>
+        <div>
+          <dt>Marca</dt>
+          <dd>{{ marcaNombre(selectedProducto.marcaId) }}</dd>
+        </div>
+        <div>
+          <dt>Stock</dt>
+          <dd>{{ selectedProducto.stock }}</dd>
+        </div>
+      </dl>
+
+      <div class="product-modal-files">
+        <h3>Documentación</h3>
+        @if (loadingArchivos()) {
+          <p class="status">Cargando documentación...</p>
+        } @else if (selectedProductoArchivos.length > 0) {
+          <ul>
+            @for (archivo of selectedProductoArchivos; track archivo.id) {
+              <li>
+                <span>
+                  <strong>{{ archivo.nombreOriginal }}</strong>
+                  <small>{{ bytesToMb(archivo.tamanoBytes) }} · {{ archivo.fechaSubida | date:'shortDate' }}</small>
+                </span>
+                <button type="button" class="button button-quiet" (click)="descargarArchivo(archivo)">Descargar</button>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="muted">No hay documentación pública asociada a este producto.</p>
+        }
+      </div>
+    </article>
+  </section>
+}
+
+<section class="contact-section" id="contacto">
+  <div class="content-section contact-layout">
+    <div>
+      <p class="eyebrow">Atención local</p>
+      <h2>Te ayudamos a elegir sin prisa</h2>
+      <p>
+        Cuéntanos qué necesitas y te orientamos con opciones de movilidad, descanso,
+        alquiler o adaptación para casa.
+      </p>
+    </div>
+    <address>
+      <strong>ORTOPEDIA PUEBLOS 3C</strong>
+      <span>Sector Pueblos 36</span>
+      <span>28760 Tres Cantos, Madrid</span>
+      <a href="tel:+34918033019">918 033 019</a>
+    </address>
+  </div>
+</section>

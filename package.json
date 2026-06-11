@@ -1,0 +1,12 @@
+{
+  "name": "sillas-tres-cantos",
+  "private": true,
+  "workspaces": [
+    "Frontend/sillas-tres-cantos-web"
+  ],
+  "scripts": {
+    "start": "npm --workspace sillas-tres-cantos-web start",
+    "build": "npm --workspace sillas-tres-cantos-web run build",
+    "test": "npm --workspace sillas-tres-cantos-web test"
+  }
+}

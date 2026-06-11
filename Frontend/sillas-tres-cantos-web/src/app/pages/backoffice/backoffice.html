@@ -1,0 +1,685 @@
+<section class="panel hero">
+  <div class="hero-header">
+    <div>
+      <p class="eyebrow">Portal empleados</p>
+      <h1>Gestión interna del catálogo</h1>
+      <p class="muted">
+        Productos, categorías, marcas, documentación y cuentas autorizadas.
+      </p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="btn ghost" (click)="goHome()">Volver a la web</button>
+      <button type="button" class="btn ghost" (click)="logout()">Cerrar sesión</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button type="button" class="tab-btn" [class.active]="activeTab() === 'productos'" (click)="setTab('productos')">
+      Productos
+    </button>
+    <button type="button" class="tab-btn" [class.active]="activeTab() === 'categorias'" (click)="setTab('categorias')">
+      Categorias
+    </button>
+    <button type="button" class="tab-btn" [class.active]="activeTab() === 'marcas'" (click)="setTab('marcas')">
+      Marcas
+    </button>
+    <button type="button" class="tab-btn" [class.active]="activeTab() === 'externos'" (click)="setTab('externos')">
+      Integracion externa
+    </button>
+    @if (canManageUsers()) {
+      <button type="button" class="tab-btn" [class.active]="activeTab() === 'usuarios'" (click)="setTab('usuarios')">
+        Usuarios
+      </button>
+    }
+  </div>
+</section>
+
+@if (errorMessage()) {
+  <aside class="app-alert" role="alert" aria-live="assertive">
+    <div class="alert-mark">!</div>
+    <div>
+      <strong>Algo no ha ido bien</strong>
+      <p>{{ errorMessage() }}</p>
+    </div>
+    <button type="button" aria-label="Cerrar alerta" (click)="clearError()">×</button>
+  </aside>
+}
+
+@if (loading()) {
+  <p class="status">Cargando backoffice...</p>
+}
+
+@if (activeTab() === 'productos') {
+  <section class="panel">
+    <div class="panel-title">
+      <h2>Productos</h2>
+      <span class="pill">{{ productos.length }} items</span>
+    </div>
+
+    <h3>Filtros</h3>
+    <div class="field-grid">
+      <div class="field">
+        <label>Modo consulta</label>
+        <select [(ngModel)]="modoProductos">
+          <option value="todos">Todos</option>
+          <option value="mios">Mis productos</option>
+          @if (canManageUsers()) {
+            <option value="usuario">Por usuario</option>
+          }
+        </select>
+      </div>
+      <div class="field">
+        <label>Nombre</label>
+        <input [(ngModel)]="filtroProductosNombre" />
+      </div>
+      <div class="field">
+        <label>Categoria</label>
+        <select [(ngModel)]="filtroProductosCategoriaId">
+          <option [ngValue]="0">Todas</option>
+          @for (categoria of categorias; track categoria.id) {
+            <option [ngValue]="categoria.id">{{ categoria.nombre }}</option>
+          }
+        </select>
+      </div>
+      <div class="field">
+        <label>Marca</label>
+        <select [(ngModel)]="filtroProductosMarcaId">
+          <option [ngValue]="0">Todas</option>
+          @for (marca of marcas; track marca.id) {
+            <option [ngValue]="marca.id">{{ marca.nombre }}</option>
+          }
+        </select>
+      </div>
+      <div class="field">
+        <label>Orden</label>
+        <select [(ngModel)]="filtroProductosOrderAsc">
+          <option [ngValue]="true">ASC</option>
+          <option [ngValue]="false">DESC</option>
+        </select>
+      </div>
+      @if (modoProductos === 'usuario' && canManageUsers()) {
+        <div class="field">
+          <label>UsuarioId</label>
+          <input type="number" min="1" [(ngModel)]="filtroProductosUsuarioId" />
+        </div>
+      }
+    </div>
+
+    <div class="actions">
+      <label class="switch">
+        <input type="checkbox" [(ngModel)]="filtroProductosIncludeHidden" />
+        <span>Mostrar ocultos</span>
+      </label>
+      <button type="button" class="btn" (click)="cargarProductos()">Recargar productos</button>
+    </div>
+  </section>
+
+  <section class="panel create-product-panel">
+    <div class="create-product-heading">
+      <div>
+        <p class="eyebrow">Alta de catálogo</p>
+        <h3>Crear producto</h3>
+        <p class="muted">Rellena los datos básicos y publica el producto cuando esté listo para mostrarse.</p>
+      </div>
+      <span class="create-badge">Nuevo</span>
+    </div>
+    <div class="field-grid">
+      <div class="field">
+        <label>Nombre</label>
+        <input [(ngModel)]="newProducto.nombre" />
+      </div>
+      <div class="field">
+        <label>Precio</label>
+        <input type="number" min="0" step="0.01" [(ngModel)]="newProducto.precio" />
+      </div>
+      <div class="field">
+        <label>Stock</label>
+        <input type="number" min="0" [(ngModel)]="newProducto.stock" />
+      </div>
+      <div class="field">
+        <label>Categoria</label>
+        <select [(ngModel)]="newProducto.categoriaId">
+          <option [ngValue]="0">Selecciona</option>
+          @for (categoria of categorias; track categoria.id) {
+            <option [ngValue]="categoria.id">{{ categoria.nombre }}</option>
+          }
+        </select>
+      </div>
+      <div class="field">
+        <label>Marca</label>
+        <select [(ngModel)]="newProducto.marcaId">
+          <option [ngValue]="0">Selecciona</option>
+          @for (marca of marcas; track marca.id) {
+            <option [ngValue]="marca.id">{{ marca.nombre }}</option>
+          }
+        </select>
+      </div>
+      <div class="field">
+        <label>Visible</label>
+        <select [(ngModel)]="newProducto.esVisible">
+          <option [ngValue]="true">Si</option>
+          <option [ngValue]="false">No</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label>Descripcion</label>
+      <textarea [(ngModel)]="newProducto.descripcion"></textarea>
+    </div>
+    <div class="actions">
+      <button type="button" class="btn alt" (click)="crearProducto()">Crear producto</button>
+    </div>
+  </section>
+
+  <section class="panel table-panel product-list-panel">
+    <div class="panel-title">
+      <h3>Productos por categoría</h3>
+      <span class="pill">{{ productos.length }} productos</span>
+    </div>
+
+    @if (productos.length === 0) {
+      <p class="muted">No hay productos para los filtros actuales.</p>
+    } @else {
+      <div class="category-stack">
+        @for (grupo of productosPorCategoria(); track grupo.categoriaId) {
+          <article class="category-panel">
+            <button
+              type="button"
+              class="category-toggle"
+              [class.expanded]="isCategoriaExpanded(grupo.categoriaId)"
+              [attr.aria-expanded]="isCategoriaExpanded(grupo.categoriaId)"
+              (click)="toggleCategoria(grupo.categoriaId)"
+            >
+              <span>
+                <strong>{{ grupo.categoriaNombre }}</strong>
+                <small>{{ grupo.productos.length }} productos · Stock total {{ grupo.totalStock }}</small>
+              </span>
+              <span class="chevron">⌄</span>
+            </button>
+
+            @if (isCategoriaExpanded(grupo.categoriaId)) {
+              <div class="table-wrap category-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Nombre</th>
+                      <th>Precio</th>
+                      <th>Stock</th>
+                      <th>Categoría</th>
+                      <th>Marca</th>
+                      <th>Visible</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (producto of grupo.productos; track producto.id) {
+                      <tr>
+                        <td>{{ producto.id }}</td>
+                        <td>
+                          @if (editProductoId === producto.id) {
+                            <input [(ngModel)]="editProducto.nombre" />
+                          } @else {
+                            {{ producto.nombre }}
+                          }
+                        </td>
+                        <td>
+                          @if (editProductoId === producto.id) {
+                            <input type="number" [(ngModel)]="editProducto.precio" />
+                          } @else {
+                            {{ producto.precio | currency:'EUR':'symbol':'1.2-2' }}
+                          }
+                        </td>
+                        <td>
+                          @if (editProductoId === producto.id) {
+                            <input type="number" [(ngModel)]="editProducto.stock" />
+                          } @else {
+                            {{ producto.stock }}
+                          }
+                        </td>
+                        <td>
+                          @if (editProductoId === producto.id) {
+                            <select [(ngModel)]="editProducto.categoriaId">
+                              @for (categoria of categorias; track categoria.id) {
+                                <option [ngValue]="categoria.id">{{ categoria.nombre }}</option>
+                              }
+                            </select>
+                          } @else {
+                            {{ grupo.categoriaNombre }}
+                          }
+                        </td>
+                        <td>
+                          @if (editProductoId === producto.id) {
+                            <select [(ngModel)]="editProducto.marcaId">
+                              @for (marca of marcas; track marca.id) {
+                                <option [ngValue]="marca.id">{{ marca.nombre }}</option>
+                              }
+                            </select>
+                          } @else {
+                            {{ marcaNombre(producto.marcaId) }}
+                          }
+                        </td>
+                        <td>
+                          @if (editProductoId === producto.id) {
+                            <select [(ngModel)]="editProducto.esVisible">
+                              <option [ngValue]="true">Si</option>
+                              <option [ngValue]="false">No</option>
+                            </select>
+                          } @else {
+                            {{ producto.esVisible ? 'Si' : 'No' }}
+                          }
+                        </td>
+                        <td class="actions-cell">
+                          @if (editProductoId === producto.id) {
+                            <button type="button" class="btn" (click)="guardarEdicionProducto(producto.id)">Guardar</button>
+                            <button type="button" class="btn ghost" (click)="cancelarEdicionProducto()">Cancelar</button>
+                          } @else {
+                            <button type="button" class="btn ghost" (click)="empezarEdicionProducto(producto)">Editar</button>
+                            <button type="button" class="btn warn" (click)="cargarArchivosProducto(producto.id)">Ver archivos</button>
+                            <button type="button" class="btn danger" (click)="eliminarProducto(producto.id)">Borrar</button>
+                          }
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </article>
+        }
+      </div>
+    }
+  </section>
+
+  @if (productoArchivosActualId > 0) {
+    <section class="panel files-panel">
+      <div class="panel-title">
+        <div>
+          <p class="eyebrow">Documentación</p>
+          <h3>Archivos del producto</h3>
+          <p class="muted">{{ productoArchivosActualNombre() }}</p>
+        </div>
+        <span class="pill">Producto {{ productoArchivosActualId }}</span>
+      </div>
+
+      @if (uploading()) {
+        <p class="status">Cargando archivos disponibles...</p>
+      } @else if (productoArchivosActual.length === 0) {
+        <p class="muted">Este producto no tiene archivos disponibles para descargar.</p>
+      } @else {
+        <ul class="file-list">
+          @for (archivo of productoArchivosActual; track archivo.id) {
+            <li>
+              <div>
+                <strong>{{ archivo.nombreOriginal }}</strong>
+                <small>{{ archivo.fechaSubida | date:'short' }} · {{ archivo.contentType }}</small>
+              </div>
+              <button type="button" class="btn alt" (click)="descargarArchivoProducto(archivo)">Descargar</button>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  }
+}
+
+@if (activeTab() === 'categorias') {
+  <section class="panel">
+    <div class="panel-title">
+      <h2>Categorias</h2>
+      <button type="button" class="btn" (click)="cargarCategorias()">Recargar</button>
+    </div>
+    <div class="field-grid">
+      <div class="field">
+        <label>Nombre</label>
+        <input [(ngModel)]="newCategoria.nombre" />
+      </div>
+      <div class="field">
+        <label>Orden</label>
+        <input type="number" [(ngModel)]="newCategoria.ordenVisual" />
+      </div>
+      <div class="field">
+        <label>Visible</label>
+        <select [(ngModel)]="newCategoria.esVisible">
+          <option [ngValue]="true">Si</option>
+          <option [ngValue]="false">No</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label>Descripcion</label>
+      <textarea [(ngModel)]="newCategoria.descripcion"></textarea>
+    </div>
+    <button type="button" class="btn alt" (click)="crearCategoria()">Crear categoria</button>
+  </section>
+
+  <section class="panel table-panel">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Orden</th>
+            <th>Visible</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (categoria of categorias; track categoria.id) {
+            <tr>
+              <td>{{ categoria.id }}</td>
+              <td>
+                @if (editCategoriaId === categoria.id) {
+                  <input [(ngModel)]="editCategoria.nombre" />
+                } @else {
+                  {{ categoria.nombre }}
+                }
+              </td>
+              <td>
+                @if (editCategoriaId === categoria.id) {
+                  <input type="number" [(ngModel)]="editCategoria.ordenVisual" />
+                } @else {
+                  {{ categoria.ordenVisual }}
+                }
+              </td>
+              <td>
+                @if (editCategoriaId === categoria.id) {
+                  <select [(ngModel)]="editCategoria.esVisible">
+                    <option [ngValue]="true">Si</option>
+                    <option [ngValue]="false">No</option>
+                  </select>
+                } @else {
+                  {{ categoria.esVisible ? 'Si' : 'No' }}
+                }
+              </td>
+              <td class="actions-cell">
+                @if (editCategoriaId === categoria.id) {
+                  <button type="button" class="btn" (click)="guardarEdicionCategoria(categoria.id)">Guardar</button>
+                  <button type="button" class="btn ghost" (click)="cancelarEdicionCategoria()">Cancelar</button>
+                } @else {
+                  <button type="button" class="btn ghost" (click)="empezarEdicionCategoria(categoria)">Editar</button>
+                  <button type="button" class="btn danger" (click)="eliminarCategoria(categoria.id)">Borrar</button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+}
+
+@if (activeTab() === 'marcas') {
+  <section class="panel">
+    <div class="panel-title">
+      <h2>Marcas</h2>
+      <button type="button" class="btn" (click)="cargarMarcas()">Recargar</button>
+    </div>
+
+    <div class="field-grid">
+      <div class="field">
+        <label>Nombre</label>
+        <input [(ngModel)]="newMarca.nombre" />
+      </div>
+      <div class="field">
+        <label>Pais origen</label>
+        <input [(ngModel)]="newMarca.paisOrigen" />
+      </div>
+      <div class="field">
+        <label>Año fundación</label>
+        <input type="number" [(ngModel)]="newMarca.anioFundacion" />
+      </div>
+      <div class="field">
+        <label>Visible</label>
+        <select [(ngModel)]="newMarca.esVisible">
+          <option [ngValue]="true">Si</option>
+          <option [ngValue]="false">No</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Descripcion</label>
+      <textarea [(ngModel)]="newMarca.descripcion"></textarea>
+    </div>
+    <button type="button" class="btn alt" (click)="crearMarca()">Crear marca</button>
+  </section>
+
+  <section class="panel table-panel">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Pais</th>
+            <th>Año</th>
+            <th>Visible</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (marca of marcas; track marca.id) {
+            <tr>
+              <td>{{ marca.id }}</td>
+              <td>
+                @if (editMarcaId === marca.id) {
+                  <input [(ngModel)]="editMarca.nombre" />
+                } @else {
+                  {{ marca.nombre }}
+                }
+              </td>
+              <td>
+                @if (editMarcaId === marca.id) {
+                  <input [(ngModel)]="editMarca.paisOrigen" />
+                } @else {
+                  {{ marca.paisOrigen || '-' }}
+                }
+              </td>
+              <td>
+                @if (editMarcaId === marca.id) {
+                  <input type="number" [(ngModel)]="editMarca.anioFundacion" />
+                } @else {
+                  {{ marca.anioFundacion || '-' }}
+                }
+              </td>
+              <td>
+                @if (editMarcaId === marca.id) {
+                  <select [(ngModel)]="editMarca.esVisible">
+                    <option [ngValue]="true">Si</option>
+                    <option [ngValue]="false">No</option>
+                  </select>
+                } @else {
+                  {{ marca.esVisible ? 'Si' : 'No' }}
+                }
+              </td>
+              <td class="actions-cell">
+                @if (editMarcaId === marca.id) {
+                  <button type="button" class="btn" (click)="guardarEdicionMarca(marca.id)">Guardar</button>
+                  <button type="button" class="btn ghost" (click)="cancelarEdicionMarca()">Cancelar</button>
+                } @else {
+                  <button type="button" class="btn ghost" (click)="empezarEdicionMarca(marca)">Editar</button>
+                  <button type="button" class="btn danger" (click)="eliminarMarca(marca.id)">Borrar</button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+}
+
+@if (activeTab() === 'usuarios') {
+  <section class="panel">
+    <div class="panel-title">
+      <h2>Usuarios (SuperAdmin)</h2>
+      <button type="button" class="btn" (click)="cargarUsuarios()">Recargar</button>
+    </div>
+
+    <div class="field-grid">
+      <div class="field">
+        <label>Filtrar por nombre</label>
+        <input [(ngModel)]="filtroUsuariosNombre" />
+      </div>
+      <div class="field">
+        <label>&nbsp;</label>
+        <button type="button" class="btn ghost" (click)="cargarUsuarios()">Aplicar filtro</button>
+      </div>
+      <div class="field">
+        <label>Buscar por ID</label>
+        <input type="number" min="1" [(ngModel)]="buscarUsuarioId" />
+      </div>
+      <div class="field">
+        <label>&nbsp;</label>
+        <button type="button" class="btn ghost" (click)="buscarUsuarioPorId()">Traer usuario por ID</button>
+      </div>
+    </div>
+
+    @if (usuarioDetalle) {
+      <p class="pill">
+        Usuario detalle: #{{ usuarioDetalle.id }} · {{ usuarioDetalle.username || usuarioDetalle.email }} ·
+        {{ usuarioDetalle.role || 'User' }}
+      </p>
+    }
+
+    <h3>Crear usuario</h3>
+    <div class="field-grid">
+      <div class="field">
+        <label>Username</label>
+        <input [(ngModel)]="newUsuario.username" />
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" [(ngModel)]="newUsuario.password" />
+      </div>
+      <div class="field">
+        <label>Role</label>
+        <select [(ngModel)]="newUsuario.role">
+          <option value="User">User</option>
+          <option value="SuperAdmin">SuperAdmin</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input [(ngModel)]="newUsuario.email" />
+      </div>
+      <div class="field">
+        <label>Nombre</label>
+        <input [(ngModel)]="newUsuario.nombre" />
+      </div>
+      <div class="field">
+        <label>Apellido</label>
+        <input [(ngModel)]="newUsuario.apellido" />
+      </div>
+    </div>
+    <button type="button" class="btn alt" (click)="crearUsuario()">Crear usuario</button>
+  </section>
+
+  <section class="panel table-panel">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Username</th>
+            <th>Role</th>
+            <th>Email</th>
+            <th>Activo</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (usuario of usuarios; track usuario.id) {
+            <tr>
+              <td>{{ usuario.id }}</td>
+              <td>
+                @if (editUsuarioId === usuario.id) {
+                  <input [(ngModel)]="editUsuario.username" />
+                } @else {
+                  {{ usuario.username || '-' }}
+                }
+              </td>
+              <td>
+                @if (editUsuarioId === usuario.id) {
+                  <select [(ngModel)]="editUsuario.role">
+                    <option value="User">User</option>
+                    <option value="SuperAdmin">SuperAdmin</option>
+                  </select>
+                } @else {
+                  {{ usuario.role || '-' }}
+                }
+              </td>
+              <td>
+                @if (editUsuarioId === usuario.id) {
+                  <input [(ngModel)]="editUsuario.email" />
+                } @else {
+                  {{ usuario.email }}
+                }
+              </td>
+              <td>
+                @if (editUsuarioId === usuario.id) {
+                  <select [(ngModel)]="editUsuario.estaActivo">
+                    <option [ngValue]="true">Si</option>
+                    <option [ngValue]="false">No</option>
+                  </select>
+                } @else {
+                  {{ usuario.estaActivo ? 'Si' : 'No' }}
+                }
+              </td>
+              <td class="actions-cell">
+                @if (editUsuarioId === usuario.id) {
+                  <button type="button" class="btn" (click)="guardarEdicionUsuario(usuario.id)">Guardar</button>
+                  <button type="button" class="btn ghost" (click)="cancelarEdicionUsuario()">Cancelar</button>
+                } @else {
+                  <button type="button" class="btn ghost" (click)="empezarEdicionUsuario(usuario)">Editar</button>
+                  <button type="button" class="btn danger" (click)="eliminarUsuario(usuario.id)">Borrar</button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+}
+
+@if (activeTab() === 'externos') {
+  <section class="panel">
+    <div class="panel-title">
+      <h2>Búsqueda externa</h2>
+      <span class="pill">{{ externosResultado?.total || 0 }} total</span>
+    </div>
+    <div class="field-grid">
+      <div class="field">
+        <label>Búsqueda</label>
+        <input [(ngModel)]="externosQuery" />
+      </div>
+      <div class="field">
+        <label>Límite</label>
+        <input type="number" min="1" max="30" [(ngModel)]="externosLimit" />
+      </div>
+      <div class="field">
+        <label>Skip</label>
+        <input type="number" min="0" [(ngModel)]="externosSkip" />
+      </div>
+    </div>
+    <button type="button" class="btn" (click)="buscarExternos()">Buscar</button>
+  </section>
+
+  <section class="externos-grid">
+    @for (producto of externosResultado?.productos || []; track producto.idExterno) {
+      <article class="panel">
+        <h3>{{ producto.nombre }}</h3>
+        <p class="muted">{{ producto.descripcion || 'Sin descripcion' }}</p>
+        <p>{{ producto.precio | currency:'EUR':'symbol':'1.2-2' }} · Rating {{ producto.rating }}</p>
+        <p class="muted">{{ producto.categoria }} · {{ producto.marca || 'Sin marca' }}</p>
+      </article>
+    }
+  </section>
+}
+
+@if (statusMessage()) {
+  <p class="status ok">{{ statusMessage() }}</p>
+}
