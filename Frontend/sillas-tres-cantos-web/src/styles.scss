@@ -211,6 +211,31 @@ address a {
   margin-inline: auto;
 }
 
+.map-section {
+  background: #eaf2fb;
+}
+
+.google-map {
+  width: 100%;
+  height: clamp(320px, 56vw, 460px);
+  margin-top: 1.35rem;
+  border: 1px solid #c8d9ea;
+  border-radius: 8px;
+}
+
+@media (min-width: 700px) {
+  .map-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 0.78fr) minmax(0, 1.22fr);
+    gap: 1.35rem;
+    align-items: center;
+  }
+
+  .google-map {
+    margin-top: 0;
+  }
+}
+
 .field-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
