@@ -43,6 +43,10 @@ body {
   background: linear-gradient(180deg, #f8fbff, #edf4fb);
 }
 
+body.modal-open {
+  overflow: hidden;
+}
+
 h1,
 h2,
 h3,
@@ -452,13 +456,21 @@ address a {
   right: 0.9rem;
   width: 2.4rem;
   height: 2.4rem;
-  border: 1px solid color-mix(in oklab, var(--surface-2) 84%, transparent);
+  border: 1px solid #cf4c60;
   border-radius: var(--button-radius);
-  background: #f8fbff;
-  color: var(--ink-100);
+  background: #cf4c60;
+  color: #ffffff;
   cursor: pointer;
   font-size: 1.45rem;
   line-height: 1;
+}
+
+.modal-close:hover,
+.modal-close:focus-visible {
+  background: #b93d51;
+  border-color: #b93d51;
+  outline: 3px solid rgba(207, 76, 96, 0.28);
+  outline-offset: 2px;
 }
 
 .product-modal-copy {

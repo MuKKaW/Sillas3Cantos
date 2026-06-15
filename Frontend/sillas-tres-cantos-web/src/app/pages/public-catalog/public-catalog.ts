@@ -1,5 +1,5 @@
-import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { CommonModule, CurrencyPipe, DOCUMENT, DatePipe } from '@angular/common';
+import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { BackendApiService } from '../../core/services/backend-api.service';
@@ -22,8 +22,9 @@ interface FiltroTab {
   templateUrl: './public-catalog.html',
   styleUrl: './public-catalog.scss',
 })
-export class PublicCatalog implements OnInit {
+export class PublicCatalog implements OnInit, OnDestroy {
   private readonly api = inject(BackendApiService);
+  private readonly document = inject(DOCUMENT);
 
   readonly services: LandingService[] = [
     {
@@ -90,6 +91,10 @@ export class PublicCatalog implements OnInit {
     await this.cargarCatalogoInicial();
   }
 
+  ngOnDestroy(): void {
+    this.setBodyScrollLocked(false);
+  }
+
   async cargarCatalogoInicial(): Promise<void> {
     this.loadingCatalogo.set(true);
     this.errorMessage.set('');
@@ -135,8 +140,7 @@ export class PublicCatalog implements OnInit {
           orderAsc: this.orderAsc
         })
       );
-      this.selectedProducto = null;
-      this.selectedProductoArchivos = [];
+      this.cerrarFichaProducto();
     } catch (error) {
       console.error(error);
       this.errorMessage.set('No hemos podido actualizar el catálogo. Inténtalo de nuevo en unos minutos.');
@@ -191,20 +195,33 @@ export class PublicCatalog implements OnInit {
 
   async seleccionarProducto(producto: Producto): Promise<void> {
     this.errorMessage.set('');
+    const productoId = producto.id;
+    this.selectedProducto = producto;
+    this.selectedProductoArchivos = [];
+    this.loadingArchivos.set(true);
+    this.setBodyScrollLocked(true);
 
     try {
-      this.selectedProducto = await firstValueFrom(this.api.getProductoById(producto.id, false));
+      const detalleProducto = await firstValueFrom(this.api.getProductoById(productoId, false));
+      if (this.selectedProducto?.id === productoId) {
+        this.selectedProducto = detalleProducto;
+      }
     } catch {
-      this.selectedProducto = producto;
+      if (this.selectedProducto?.id !== productoId) {
+        return;
+      }
     }
 
-    await this.cargarArchivosProducto(producto.id);
+    if (this.selectedProducto?.id === productoId) {
+      await this.cargarArchivosProducto(productoId);
+    }
   }
 
   cerrarFichaProducto(): void {
     this.selectedProducto = null;
     this.selectedProductoArchivos = [];
     this.loadingArchivos.set(false);
+    this.setBodyScrollLocked(false);
   }
 
   async cargarArchivosProducto(productoId: number): Promise<void> {
@@ -249,5 +266,9 @@ export class PublicCatalog implements OnInit {
 
   bytesToMb(bytes: number): string {
     return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  }
+
+  private setBodyScrollLocked(isLocked: boolean): void {
+    this.document.body.classList.toggle('modal-open', isLocked);
   }
 }
