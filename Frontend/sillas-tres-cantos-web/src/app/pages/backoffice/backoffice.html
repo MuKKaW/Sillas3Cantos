@@ -23,6 +23,14 @@
     <button type="button" class="tab-btn" [class.active]="activeTab() === 'marcas'" (click)="setTab('marcas')">
       Marcas
     </button>
+    <button
+      type="button"
+      class="tab-btn"
+      [class.active]="activeTab() === 'administracion'"
+      (click)="setTab('administracion')"
+    >
+      Administracion
+    </button>
     <button type="button" class="tab-btn" [class.active]="activeTab() === 'externos'" (click)="setTab('externos')">
       Integracion externa
     </button>
@@ -527,6 +535,50 @@
           }
         </tbody>
       </table>
+    </div>
+  </section>
+}
+
+@if (activeTab() === 'administracion') {
+  <section class="panel admin-panel">
+    <div class="panel-title">
+      <div>
+        <p class="eyebrow">Landing publica</p>
+        <h2>Administracion</h2>
+        <p class="muted">Preferencias globales del catalogo publico.</p>
+      </div>
+      <span class="pill">{{ modoFiltroCatalogo() }}</span>
+    </div>
+
+    <div class="admin-settings">
+      <label class="admin-toggle">
+        <input type="checkbox" [(ngModel)]="configuracionCatalogo.usarFiltroTabs" />
+        <span class="toggle-track" aria-hidden="true">
+          <span class="toggle-thumb"></span>
+        </span>
+        <span class="toggle-copy">
+          <strong>Filtro nuevo por tabs</strong>
+          <small>{{ configuracionCatalogo.usarFiltroTabs ? 'Activo' : 'Filtro actual' }}</small>
+        </span>
+      </label>
+
+      <div class="admin-setting-meta">
+        <span>Ultima actualizacion</span>
+        <strong>
+          {{ configuracionCatalogo.fechaActualizacion ? (configuracionCatalogo.fechaActualizacion | date:'short') : '-' }}
+        </strong>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button
+        type="button"
+        class="btn"
+        [disabled]="guardandoConfiguracion()"
+        (click)="guardarConfiguracionCatalogo()"
+      >
+        {{ guardandoConfiguracion() ? 'Guardando...' : 'Guardar configuracion' }}
+      </button>
     </div>
   </section>
 }

@@ -8,6 +8,7 @@ import { BackendApiService } from '../../core/services/backend-api.service';
 import {
   BusquedaProductosExternos,
   Categoria,
+  ConfiguracionCatalogo,
   Marca,
   PostCategoria,
   PostMarca,
@@ -22,7 +23,7 @@ import {
   Usuario
 } from '../../core/models/api.models';
 
-type BackofficeTab = 'productos' | 'categorias' | 'marcas' | 'usuarios' | 'externos';
+type BackofficeTab = 'productos' | 'categorias' | 'marcas' | 'administracion' | 'usuarios' | 'externos';
 
 interface ProductosCategoriaGrupo {
   categoriaId: number;
@@ -48,6 +49,7 @@ export class Backoffice implements OnInit {
   readonly activeTab = signal<BackofficeTab>('productos');
   readonly loading = signal(false);
   readonly uploading = signal(false);
+  readonly guardandoConfiguracion = signal(false);
   readonly statusMessage = signal('');
   readonly errorMessage = signal('');
   readonly expandedCategoriaIds = signal<Set<number>>(new Set<number>());
@@ -57,6 +59,10 @@ export class Backoffice implements OnInit {
   marcas: Marca[] = [];
   productos: Producto[] = [];
   usuarios: Usuario[] = [];
+  configuracionCatalogo: ConfiguracionCatalogo = {
+    usarFiltroTabs: false,
+    fechaActualizacion: ''
+  };
   externosResultado: BusquedaProductosExternos | null = null;
 
   filtroProductosNombre = '';
@@ -131,12 +137,18 @@ export class Backoffice implements OnInit {
     this.errorMessage.set('');
 
     try {
-      const [categorias, marcas] = await Promise.all([
+      const configuracionPorDefecto: ConfiguracionCatalogo = {
+        usarFiltroTabs: false,
+        fechaActualizacion: ''
+      };
+      const [categorias, marcas, configuracionCatalogo] = await Promise.all([
         firstValueFrom(this.api.getCategorias({ includeHidden: true, orderAsc: true })),
-        firstValueFrom(this.api.getMarcas({ includeHidden: true, orderAsc: true }))
+        firstValueFrom(this.api.getMarcas({ includeHidden: true, orderAsc: true })),
+        firstValueFrom(this.api.getConfiguracionCatalogo()).catch(() => configuracionPorDefecto)
       ]);
       this.categorias = categorias;
       this.marcas = marcas;
+      this.configuracionCatalogo = configuracionCatalogo;
       await this.cargarProductos();
       if (this.canManageUsers()) {
         await this.cargarUsuarios();
@@ -158,6 +170,29 @@ export class Backoffice implements OnInit {
     this.activeTab.set(tab);
     this.statusMessage.set('');
     this.errorMessage.set('');
+  }
+
+  async guardarConfiguracionCatalogo(): Promise<void> {
+    this.guardandoConfiguracion.set(true);
+    this.errorMessage.set('');
+
+    try {
+      this.configuracionCatalogo = await firstValueFrom(
+        this.api.updateConfiguracionCatalogo({
+          usarFiltroTabs: this.configuracionCatalogo.usarFiltroTabs
+        })
+      );
+      this.statusMessage.set('Configuracion de la landing actualizada.');
+    } catch (error) {
+      console.error(error);
+      this.errorMessage.set('No se pudo guardar la configuracion de la landing.');
+    } finally {
+      this.guardandoConfiguracion.set(false);
+    }
+  }
+
+  modoFiltroCatalogo(): string {
+    return this.configuracionCatalogo.usarFiltroTabs ? 'Filtro nuevo por tabs' : 'Filtro actual';
   }
 
   async logout(): Promise<void> {

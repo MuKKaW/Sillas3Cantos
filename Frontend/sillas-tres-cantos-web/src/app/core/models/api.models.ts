@@ -51,6 +51,15 @@ export interface Categoria {
   fechaActualizacion?: string | null;
 }
 
+export interface ConfiguracionCatalogo {
+  usarFiltroTabs: boolean;
+  fechaActualizacion: string;
+}
+
+export interface PutConfiguracionCatalogo {
+  usarFiltroTabs: boolean;
+}
+
 export interface PostCategoria {
   nombre: string;
   descripcion?: string | null;

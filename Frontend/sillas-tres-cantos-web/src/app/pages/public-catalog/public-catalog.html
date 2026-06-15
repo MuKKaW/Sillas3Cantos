@@ -40,45 +40,118 @@
       </p>
     </div>
 
-    <div class="filter-bar">
-      <div class="field">
-        <label for="filtroNombre">Producto</label>
-        <input id="filtroNombre" [(ngModel)]="filtroNombre" placeholder="Buscar por nombre" />
-      </div>
+    @if (usarFiltroTabs) {
+      <div class="filter-panel tab-filter-panel">
+        <div class="filter-tab-layout">
+          <div class="filter-tab-group">
+            <div class="filter-tab-heading">
+              <span>Categorías</span>
+            </div>
+            <div class="filter-tabs" aria-label="Categorías">
+              <button
+                type="button"
+                class="filter-tab"
+                [class.active]="filtroCategoriaId === 0"
+                [attr.aria-pressed]="filtroCategoriaId === 0"
+                (click)="seleccionarCategoriaTab(0)"
+              >
+                <span>Todas</span>
+              </button>
+              @for (tab of categoriaTabs(); track tab.id) {
+                <button
+                  type="button"
+                  class="filter-tab"
+                  [class.active]="filtroCategoriaId === tab.id"
+                  [attr.aria-pressed]="filtroCategoriaId === tab.id"
+                  (click)="seleccionarCategoriaTab(tab.id)"
+                >
+                  <span>{{ tab.nombre }}</span>
+                </button>
+              }
+            </div>
+          </div>
 
-      <div class="field">
-        <label for="filtroCategoria">Categoría</label>
-        <select id="filtroCategoria" [(ngModel)]="filtroCategoriaId">
-          <option [ngValue]="0">Todas</option>
-          @for (categoria of categorias; track categoria.id) {
-            <option [ngValue]="categoria.id">{{ categoria.nombre }}</option>
+          @if (filtroCategoriaId > 0) {
+            <div class="filter-tab-group">
+              <div class="filter-tab-heading">
+                <span>Marcas</span>
+              </div>
+              <div class="filter-tabs" aria-label="Marcas">
+                <button
+                  type="button"
+                  class="filter-tab"
+                  [class.active]="filtroMarcaId === 0"
+                  [attr.aria-pressed]="filtroMarcaId === 0"
+                  (click)="seleccionarMarcaTab(0)"
+                >
+                  <span>Todas</span>
+                </button>
+                @for (tab of marcaTabs(); track tab.id) {
+                  <button
+                    type="button"
+                    class="filter-tab"
+                    [class.active]="filtroMarcaId === tab.id"
+                    [attr.aria-pressed]="filtroMarcaId === tab.id"
+                    (click)="seleccionarMarcaTab(tab.id)"
+                  >
+                    <span>{{ tab.nombre }}</span>
+                  </button>
+                }
+              </div>
+            </div>
           }
-        </select>
-      </div>
+        </div>
 
-      <div class="field">
-        <label for="filtroMarca">Marca</label>
-        <select id="filtroMarca" [(ngModel)]="filtroMarcaId">
-          <option [ngValue]="0">Todas</option>
-          @for (marca of marcas; track marca.id) {
-            <option [ngValue]="marca.id">{{ marca.nombre }}</option>
-          }
-        </select>
+        <div class="filter-search-row">
+          <div class="filter-search-controls">
+            <input
+              id="filtroNombreTabs"
+              aria-label="Buscar por nombre"
+              [(ngModel)]="filtroNombre"
+              (ngModelChange)="aplicarFiltros()"
+              placeholder="Buscar por nombre"
+            />
+            <button type="button" class="button button-quiet" (click)="limpiarFiltros()">Limpiar</button>
+          </div>
+        </div>
       </div>
+    } @else {
+      <div class="filter-bar filter-panel">
+        <div class="field">
+          <label for="filtroNombre">Producto</label>
+          <input
+            id="filtroNombre"
+            [(ngModel)]="filtroNombre"
+            (ngModelChange)="aplicarFiltros()"
+            placeholder="Buscar por nombre"
+          />
+        </div>
 
-      <div class="field">
-        <label for="filtroOrden">Orden</label>
-        <select id="filtroOrden" [(ngModel)]="orderAsc">
-          <option [ngValue]="true">A-Z</option>
-          <option [ngValue]="false">Z-A</option>
-        </select>
-      </div>
+        <div class="field">
+          <label for="filtroCategoria">Categoría</label>
+          <select id="filtroCategoria" [(ngModel)]="filtroCategoriaId" (ngModelChange)="aplicarFiltros()">
+            <option [ngValue]="0">Todas</option>
+            @for (categoria of categorias; track categoria.id) {
+              <option [ngValue]="categoria.id">{{ categoria.nombre }}</option>
+            }
+          </select>
+        </div>
 
-      <div class="filter-actions">
-        <button type="button" class="button button-primary" (click)="aplicarFiltros()">Filtrar</button>
-        <button type="button" class="button button-quiet" (click)="limpiarFiltros()">Limpiar</button>
+        <div class="field">
+          <label for="filtroMarca">Marca</label>
+          <select id="filtroMarca" [(ngModel)]="filtroMarcaId" (ngModelChange)="aplicarFiltros()">
+            <option [ngValue]="0">Todas</option>
+            @for (marca of marcas; track marca.id) {
+              <option [ngValue]="marca.id">{{ marca.nombre }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="filter-actions">
+          <button type="button" class="button button-quiet" (click)="limpiarFiltros()">Limpiar</button>
+        </div>
       </div>
-    </div>
+    }
 
     @if (loadingCatalogo()) {
       <p class="status">Cargando catálogo...</p>

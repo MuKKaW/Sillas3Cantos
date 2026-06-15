@@ -5,6 +5,7 @@ import { API_BASE_URL } from '../config/api.config';
 import {
   BusquedaProductosExternos,
   Categoria,
+  ConfiguracionCatalogo,
   Marca,
   PostCategoria,
   PostMarca,
@@ -12,6 +13,7 @@ import {
   PostUsuario,
   Producto,
   ProductoArchivo,
+  PutConfiguracionCatalogo,
   PutCategoria,
   PutMarca,
   PutProducto,
@@ -65,6 +67,14 @@ export class BackendApiService {
   getCategoriaById(id: number, includeHidden = false): Observable<Categoria> {
     const params = new HttpParams().set('includeHidden', String(includeHidden));
     return this.http.get<Categoria>(`${API_BASE_URL}/categorias/${id}`, { params });
+  }
+
+  getConfiguracionCatalogo(): Observable<ConfiguracionCatalogo> {
+    return this.http.get<ConfiguracionCatalogo>(`${API_BASE_URL}/configuracion/catalogo`);
+  }
+
+  updateConfiguracionCatalogo(payload: PutConfiguracionCatalogo): Observable<ConfiguracionCatalogo> {
+    return this.http.put<ConfiguracionCatalogo>(`${API_BASE_URL}/configuracion/catalogo`, payload);
   }
 
   createCategoria(payload: PostCategoria): Observable<Categoria> {

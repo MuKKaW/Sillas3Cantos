@@ -210,6 +210,90 @@ td select {
   gap: 0.7rem;
 }
 
+.admin-panel .panel-title {
+  align-items: flex-start;
+}
+
+.admin-settings {
+  margin-top: 1rem;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.admin-toggle {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.85rem;
+  align-items: center;
+  cursor: pointer;
+}
+
+.admin-toggle input {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  opacity: 0;
+}
+
+.toggle-track {
+  position: relative;
+  width: 56px;
+  height: 32px;
+  border: 1px solid color-mix(in oklab, var(--surface-2) 82%, transparent);
+  border-radius: 999px;
+  background: #dce8f5;
+  transition: background 0.18s ease, border-color 0.18s ease;
+}
+
+.toggle-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 3px 8px rgba(16, 32, 51, 0.18);
+  transition: transform 0.18s ease;
+}
+
+.admin-toggle input:checked + .toggle-track {
+  border-color: color-mix(in oklab, var(--accent-1) 70%, #ffffff);
+  background: var(--accent-1);
+}
+
+.admin-toggle input:checked + .toggle-track .toggle-thumb {
+  transform: translateX(24px);
+}
+
+.admin-toggle input:focus-visible + .toggle-track {
+  outline: 3px solid color-mix(in oklab, var(--accent-3) 64%, transparent);
+  outline-offset: 3px;
+}
+
+.toggle-copy {
+  display: grid;
+  gap: 0.18rem;
+  min-width: 0;
+}
+
+.toggle-copy small,
+.admin-setting-meta span {
+  color: var(--ink-300);
+}
+
+.admin-setting-meta {
+  display: grid;
+  gap: 0.22rem;
+  padding-top: 0.2rem;
+}
+
+.btn:disabled {
+  cursor: wait;
+  opacity: 0.68;
+}
+
 @media (max-width: 640px) {
   .hero,
   .panel,
@@ -236,5 +320,10 @@ td select {
 
   .header-actions {
     justify-content: flex-end;
+  }
+
+  .admin-settings {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
   }
 }

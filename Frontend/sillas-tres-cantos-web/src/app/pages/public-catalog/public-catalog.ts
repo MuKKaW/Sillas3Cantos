@@ -3,12 +3,17 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { BackendApiService } from '../../core/services/backend-api.service';
-import { Categoria, Marca, Producto, ProductoArchivo } from '../../core/models/api.models';
+import { Categoria, ConfiguracionCatalogo, Marca, Producto, ProductoArchivo } from '../../core/models/api.models';
 
 interface LandingService {
   icon: string;
   title: string;
   text: string;
+}
+
+interface FiltroTab {
+  id: number;
+  nombre: string;
 }
 
 @Component({
@@ -66,9 +71,11 @@ export class PublicCatalog implements OnInit {
   categorias: Categoria[] = [];
   marcas: Marca[] = [];
   productos: Producto[] = [];
+  productosReferencia: Producto[] = [];
   selectedProducto: Producto | null = null;
   selectedProductoArchivos: ProductoArchivo[] = [];
 
+  usarFiltroTabs = false;
   filtroNombre = '';
   filtroCategoriaId = 0;
   filtroMarcaId = 0;
@@ -89,15 +96,22 @@ export class PublicCatalog implements OnInit {
     this.statusMessage.set('');
 
     try {
-      const [categorias, marcas, productos] = await Promise.all([
+      const configuracionPorDefecto: ConfiguracionCatalogo = {
+        usarFiltroTabs: false,
+        fechaActualizacion: ''
+      };
+      const [configuracion, categorias, marcas, productos] = await Promise.all([
+        firstValueFrom(this.api.getConfiguracionCatalogo()).catch(() => configuracionPorDefecto),
         firstValueFrom(this.api.getCategorias({ includeHidden: false, orderAsc: true })),
         firstValueFrom(this.api.getMarcas({ includeHidden: false, orderAsc: true })),
         firstValueFrom(this.api.getProductos({ includeHidden: false, orderAsc: this.orderAsc }))
       ]);
 
+      this.usarFiltroTabs = configuracion.usarFiltroTabs;
       this.categorias = categorias;
       this.marcas = marcas;
       this.productos = productos;
+      this.productosReferencia = productos;
     } catch (error) {
       console.error(error);
       this.errorMessage.set('Ahora mismo no podemos mostrar el catálogo online. Puedes consultarnos disponibilidad por teléfono o en tienda.');
@@ -137,6 +151,42 @@ export class PublicCatalog implements OnInit {
     this.filtroMarcaId = 0;
     this.orderAsc = true;
     await this.aplicarFiltros();
+  }
+
+  async seleccionarCategoriaTab(categoriaId: number): Promise<void> {
+    this.filtroCategoriaId = categoriaId;
+    this.filtroMarcaId = 0;
+    await this.aplicarFiltros();
+  }
+
+  async seleccionarMarcaTab(marcaId: number): Promise<void> {
+    this.filtroMarcaId = marcaId;
+    await this.aplicarFiltros();
+  }
+
+  categoriaTabs(): FiltroTab[] {
+    return this.categorias.map((categoria) => ({
+      id: categoria.id,
+      nombre: categoria.nombre
+    }));
+  }
+
+  marcaTabs(): FiltroTab[] {
+    if (!this.filtroCategoriaId) {
+      return [];
+    }
+
+    const productosCategoria = this.productosReferencia.filter((producto) =>
+      producto.categoriaId === this.filtroCategoriaId
+    );
+    const marcaIdsCategoria = new Set(productosCategoria.map((producto) => producto.marcaId));
+
+    return this.marcas
+      .filter((marca) => marcaIdsCategoria.has(marca.id))
+      .map((marca) => ({
+        id: marca.id,
+        nombre: marca.nombre
+      }));
   }
 
   async seleccionarProducto(producto: Producto): Promise<void> {

@@ -69,6 +69,12 @@ CREATE TABLE IF NOT EXISTS producto_archivos (
   CONSTRAINT fk_producto_archivos_usuario FOREIGN KEY (subido_por_usuario_id) REFERENCES usuarios(id) ON DELETE SET NULL
 );
 
+CREATE TABLE IF NOT EXISTS configuracion_catalogo (
+  id TINYINT PRIMARY KEY,
+  usar_filtro_tabs BOOLEAN NOT NULL DEFAULT FALSE,
+  fecha_actualizacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 SET @schema_name = DATABASE();
 
 SET @sql = IF (
@@ -399,6 +405,14 @@ SET role = 'SuperAdmin'
 WHERE LOWER(username) = 'admin'
   AND role IS NOT NULL
   AND LOWER(role) = 'admin';
+
+INSERT INTO configuracion_catalogo (id, usar_filtro_tabs, fecha_actualizacion)
+SELECT 1, TRUE, CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM configuracion_catalogo
+  WHERE id = 1
+);
 
 INSERT INTO usuarios (username, password_hash, role, nombre, apellido, email, esta_activo)
 SELECT
