@@ -18,9 +18,11 @@ El backend debe proteger la gestion interna sin romper la consulta publica del c
 
 Reglas importantes:
 
-- Los GET publicos de productos, categorias, marcas y archivos deben funcionar sin token.
-- El contenido oculto solo debe devolverse con `includeHidden=true` y usuario autenticado.
+- Los GET publicos de productos, categorias, marcas y configuracion del catalogo deben funcionar sin token.
+- El contenido oculto de productos, categorias y marcas solo debe devolverse con `includeHidden=true` y usuario autenticado.
+- Los archivos asociados a productos son documentacion interna: listar, descargar, subir y borrar archivos requiere JWT.
 - Crear, editar o borrar catalogo requiere JWT.
+- Editar productos acepta JSON para cambios de datos y `multipart/form-data` cuando se cambia la imagen.
 - Gestionar usuarios queda restringido a `SuperAdmin`.
 - Mantener mensajes de error utiles para frontend, pero sin filtrar detalles internos.
 - No introducir credenciales nuevas ni secretos reales en codigo fuente.
@@ -63,6 +65,7 @@ api/productos
 api/categorias
 api/marcas
 api/productos/{productoId}/archivos
+api/configuracion/catalogo
 api/integraciones
 api/usuarios
 ```
@@ -75,6 +78,7 @@ Categoria
 Marca
 ProductoArchivo
 Usuario
+ConfiguracionCatalogo
 ```
 
 Visibilidad publica:
@@ -82,8 +86,10 @@ Visibilidad publica:
 - `productos.es_visible`
 - `categorias.es_visible`
 - `marcas.es_visible`
+- `configuracion_catalogo.usar_filtro_tabs` decide si la landing usa el filtro actual o el filtro nuevo por tabs.
 
 El frontend publico consulta por defecto con `includeHidden=false`.
+Los archivos de producto no forman parte de la experiencia publica; quedan reservados para empleados autenticados.
 
 ## Configuracion
 
@@ -132,9 +138,11 @@ IProductoArchivoStorageService
 Reglas actuales:
 
 - Imagenes soportadas: JPG, PNG y WEBP.
+- Las imagenes de producto se pueden subir al crear y reemplazar al editar producto.
 - Documentacion soportada: JPG, PNG, WEBP, PDF, DOC y DOCX.
 - Tamano maximo por defecto: `5242880` bytes.
 - Los archivos locales se guardan bajo `FileStorage:RootPath`.
+- Los archivos/documentacion de producto se gestionan desde backoffice y no deben exponerse en endpoints anonimos.
 
 ## Base De Datos
 
@@ -185,6 +193,8 @@ powershell -ExecutionPolicy Bypass -File ./scripts/validar-auth-backoffice.ps1
 - Preferir `CancellationToken` en operaciones de IO, subida/descarga y BBDD nuevas.
 - Mantener respuestas publicas compatibles con el frontend Angular.
 - No devolver productos, categorias o marcas ocultas en endpoints publicos por accidente.
+- No exponer archivos de producto a usuarios anonimos; son contenido interno de empleados.
+- Mantener `GET api/configuracion/catalogo` publico y `PUT api/configuracion/catalogo` protegido con JWT.
 - Si agregas endpoints protegidos, registra el requisito con `[Authorize]` y comprueba roles cuando aplique.
 
 ## Validacion Recomendada
@@ -206,4 +216,3 @@ Abrir Swagger:
 ```text
 http://localhost:8311/swagger/index.html
 ```
-

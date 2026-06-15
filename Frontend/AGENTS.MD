@@ -79,9 +79,18 @@ src/app/core/services/backend-api.service.ts
 
 ## Flujo Publico
 
-`PublicCatalog` carga categorias, marcas y productos visibles usando `BackendApiService`.
+`PublicCatalog` carga configuracion de catalogo, categorias, marcas y productos visibles usando `BackendApiService`.
 
 La vista publica siempre consulta con `includeHidden: false`. Si la API no esta disponible, se muestra un mensaje amable orientado a cliente, no un texto tecnico.
+
+La landing soporta dos modos de filtro:
+
+- Filtro actual con inputs/selects.
+- Filtro nuevo por tabs: primero categorias y, cuando hay categoria seleccionada, marcas. El buscador por nombre queda debajo de los tabs.
+
+El modo activo lo decide `configuracionCatalogo.usarFiltroTabs`, expuesto por `api/configuracion/catalogo` y configurable desde backoffice.
+
+Los archivos asociados a productos son internos. La vista publica no debe listar ni descargar documentacion de producto.
 
 La landing contiene:
 
@@ -89,7 +98,7 @@ La landing contiene:
 - Banda de confianza: venta/alquiler, entrega local, soporte tecnico.
 - Bloques de servicios.
 - Catalogo filtrable.
-- Detalle de producto y descarga de documentacion publica.
+- Detalle de producto sin archivos internos.
 - Contacto.
 - Legal basico.
 
@@ -127,9 +136,12 @@ El portal interno gestiona:
 - Productos.
 - Categorias.
 - Marcas.
-- Archivos de producto.
+- Archivos internos de producto, visibles solo para empleados.
+- Administracion global del filtro de la landing, disponible para empleados autenticados.
 - Integracion externa.
 - Usuarios, solo para `SuperAdmin`.
+
+La edicion de producto se abre en modal desde el boton `Editar`. Ese modal gestiona datos, cambio de imagen y archivos asociados. Mientras el modal esta abierto, el scroll de fondo debe quedar bloqueado.
 
 El logout esta dentro del backoffice porque el header publico no muestra estado de sesion.
 
@@ -247,3 +259,6 @@ Comprobar especialmente:
 - El footer contiene `Portal empleados`.
 - El contacto usa `Sector Pueblos 36`, `28760 Tres Cantos, Madrid` y `918 033 019`.
 - La paleta principal es azul.
+- El catalogo respeta el modo configurado: filtro actual o filtro nuevo por tabs.
+- La ficha publica de producto no muestra archivos internos ni descargas de documentacion.
+- En backoffice, editar producto abre modal con cambio de imagen y gestion de archivos internos.

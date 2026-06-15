@@ -14,8 +14,12 @@ Read `../../AGENTS.md` before editing. It contains the current API intent, route
 ## Working Rules
 
 - Keep public catalog reads available without login.
-- Keep hidden content behind `includeHidden=true` plus authenticated access.
+- Keep public catalog configuration reads available without login.
+- Keep hidden products, categories, and brands behind `includeHidden=true` plus authenticated access.
+- Keep product files/internal documentation behind JWT for list, download, upload, and delete.
 - Require JWT for catalog mutations and protected backoffice flows.
+- Product updates may be JSON-only or `multipart/form-data` when replacing the product image.
+- Keep `GET api/configuracion/catalogo` public and `PUT api/configuracion/catalogo` authenticated.
 - Keep user management restricted to `SuperAdmin`.
 - Do not commit real secrets, production JWT keys, database passwords, or Cloudinary credentials.
 - Keep SQL parameterized in repository classes.
@@ -46,6 +50,15 @@ Business logic:
 ```text
 SillasTresCantos.Api/Services/
 SillasTresCantos.Api/Services/Storage/
+```
+
+Catalog configuration and internal files:
+
+```text
+SillasTresCantos.Api/Controllers/ConfiguracionCatalogoController.cs
+SillasTresCantos.Api/Controllers/ProductoArchivosController.cs
+SillasTresCantos.Api/Services/ConfiguracionCatalogoService.cs
+SillasTresCantos.Api/Services/ProductoArchivoService.cs
 ```
 
 Persistence:
