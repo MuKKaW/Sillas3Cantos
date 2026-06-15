@@ -280,26 +280,6 @@
         </div>
       </dl>
 
-      <div class="product-modal-files">
-        <h3>Documentación</h3>
-        @if (loadingArchivos()) {
-          <p class="status">Cargando documentación...</p>
-        } @else if (selectedProductoArchivos.length > 0) {
-          <ul>
-            @for (archivo of selectedProductoArchivos; track archivo.id) {
-              <li>
-                <span>
-                  <strong>{{ archivo.nombreOriginal }}</strong>
-                  <small>{{ bytesToMb(archivo.tamanoBytes) }} · {{ archivo.fechaSubida | date:'shortDate' }}</small>
-                </span>
-                <button type="button" class="button button-quiet" (click)="descargarArchivo(archivo)">Descargar</button>
-              </li>
-            }
-          </ul>
-        } @else {
-          <p class="muted">No hay documentación pública asociada a este producto.</p>
-        }
-      </div>
     </article>
   </section>
 }

@@ -1,9 +1,9 @@
-import { CommonModule, CurrencyPipe, DOCUMENT, DatePipe } from '@angular/common';
+import { CommonModule, CurrencyPipe, DOCUMENT } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { BackendApiService } from '../../core/services/backend-api.service';
-import { Categoria, ConfiguracionCatalogo, Marca, Producto, ProductoArchivo } from '../../core/models/api.models';
+import { Categoria, ConfiguracionCatalogo, Marca, Producto } from '../../core/models/api.models';
 
 interface LandingService {
   icon: string;
@@ -18,7 +18,7 @@ interface FiltroTab {
 
 @Component({
   selector: 'app-public-catalog',
-  imports: [CommonModule, FormsModule, CurrencyPipe, DatePipe],
+  imports: [CommonModule, FormsModule, CurrencyPipe],
   templateUrl: './public-catalog.html',
   styleUrl: './public-catalog.scss',
 })
@@ -74,7 +74,6 @@ export class PublicCatalog implements OnInit, OnDestroy {
   productos: Producto[] = [];
   productosReferencia: Producto[] = [];
   selectedProducto: Producto | null = null;
-  selectedProductoArchivos: ProductoArchivo[] = [];
 
   usarFiltroTabs = false;
   filtroNombre = '';
@@ -83,7 +82,6 @@ export class PublicCatalog implements OnInit, OnDestroy {
   orderAsc = true;
 
   readonly loadingCatalogo = signal(false);
-  readonly loadingArchivos = signal(false);
   readonly statusMessage = signal('');
   readonly errorMessage = signal('');
 
@@ -197,8 +195,6 @@ export class PublicCatalog implements OnInit, OnDestroy {
     this.errorMessage.set('');
     const productoId = producto.id;
     this.selectedProducto = producto;
-    this.selectedProductoArchivos = [];
-    this.loadingArchivos.set(true);
     this.setBodyScrollLocked(true);
 
     try {
@@ -212,48 +208,11 @@ export class PublicCatalog implements OnInit, OnDestroy {
       }
     }
 
-    if (this.selectedProducto?.id === productoId) {
-      await this.cargarArchivosProducto(productoId);
-    }
   }
 
   cerrarFichaProducto(): void {
     this.selectedProducto = null;
-    this.selectedProductoArchivos = [];
-    this.loadingArchivos.set(false);
     this.setBodyScrollLocked(false);
-  }
-
-  async cargarArchivosProducto(productoId: number): Promise<void> {
-    this.loadingArchivos.set(true);
-
-    try {
-      this.selectedProductoArchivos = await firstValueFrom(this.api.getProductoArchivos(productoId, false));
-    } catch (error) {
-      console.error(error);
-      this.selectedProductoArchivos = [];
-    } finally {
-      this.loadingArchivos.set(false);
-    }
-  }
-
-  async descargarArchivo(archivo: ProductoArchivo): Promise<void> {
-    this.errorMessage.set('');
-
-    try {
-      const blob = await firstValueFrom(
-        this.api.downloadProductoArchivo(archivo.productoId, archivo.id, false)
-      );
-      const objectUrl = URL.createObjectURL(blob);
-      const anchor = document.createElement('a');
-      anchor.href = objectUrl;
-      anchor.download = archivo.nombreOriginal;
-      anchor.click();
-      URL.revokeObjectURL(objectUrl);
-    } catch (error) {
-      console.error(error);
-      this.errorMessage.set('No hemos podido descargar el archivo seleccionado.');
-    }
   }
 
   categoriaNombre(categoriaId: number): string {
@@ -262,10 +221,6 @@ export class PublicCatalog implements OnInit, OnDestroy {
 
   marcaNombre(marcaId: number): string {
     return this.marcas.find((marca) => marca.id === marcaId)?.nombre ?? 'Consultar marca';
-  }
-
-  bytesToMb(bytes: number): string {
-    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
   }
 
   private setBodyScrollLocked(isLocked: boolean): void {

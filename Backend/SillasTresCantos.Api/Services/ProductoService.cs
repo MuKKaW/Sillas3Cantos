@@ -182,18 +182,23 @@ public class ProductoService : IProductoService
         }
     }
 
-    public async Task<ProductoOperationResult> PutProductoAsync(PutProductoDTO producto)
+    public async Task<ProductoOperationResult> PutProductoAsync(
+        PutProductoDTO producto,
+        CancellationToken cancellationToken = default)
     {
         if (producto.Id <= 0)
         {
             return ProductoOperationResult.ValidationError();
         }
 
-        Producto? existente = await _productoRepository.GetProductoByIdAsync(producto.Id);
+        Producto? existente = await _productoRepository.GetProductoByIdAsync(producto.Id, cancellationToken);
         if (existente is null)
         {
             return ProductoOperationResult.NotFoundError();
         }
+
+        IFormFile? imagen = producto.Imagen;
+        bool tieneImagen = imagen is not null && imagen.Length > 0;
 
         if (producto.Nombre is not null && string.IsNullOrWhiteSpace(producto.Nombre))
         {
@@ -225,6 +230,21 @@ public class ProductoService : IProductoService
             return ProductoOperationResult.ValidationError();
         }
 
+        if (imagen is not null && imagen.Length == 0)
+        {
+            return ProductoOperationResult.ValidationError();
+        }
+
+        if (tieneImagen && imagen!.Length > GetMaxImageSizeBytes())
+        {
+            return ProductoOperationResult.FileTooLargeError();
+        }
+
+        if (tieneImagen && !IsSupportedImage(imagen!))
+        {
+            return ProductoOperationResult.UnsupportedTypeError();
+        }
+
         string nombreFinal = string.IsNullOrWhiteSpace(producto.Nombre)
             ? existente.Nombre
             : producto.Nombre.Trim();
@@ -247,12 +267,29 @@ public class ProductoService : IProductoService
             return ProductoOperationResult.ValidationError();
         }
 
-        bool categoriaExiste = await _productoRepository.CategoriaExistsAsync(categoriaIdFinal);
-        bool marcaExiste = await _productoRepository.MarcaExistsAsync(marcaIdFinal);
+        bool categoriaExiste = await _productoRepository.CategoriaExistsAsync(categoriaIdFinal, cancellationToken);
+        bool marcaExiste = await _productoRepository.MarcaExistsAsync(marcaIdFinal, cancellationToken);
 
         if (!categoriaExiste || !marcaExiste)
         {
             return ProductoOperationResult.RelatedNotFoundError();
+        }
+
+        StoredProductoImagen? storedImagen = null;
+        if (tieneImagen)
+        {
+            try
+            {
+                storedImagen = await _productoImagenStorageService.UploadAsync(imagen!, cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception)
+            {
+                return ProductoOperationResult.UnexpectedError();
+            }
         }
 
         Producto actualizado = new()
@@ -266,9 +303,9 @@ public class ProductoService : IProductoService
             MarcaId = marcaIdFinal,
             CreadoPorUsuarioId = existente.CreadoPorUsuarioId,
             EsVisible = esVisibleFinal,
-            ImagenUrl = existente.ImagenUrl,
-            ImagenPublicId = existente.ImagenPublicId,
-            ImagenResourceType = existente.ImagenResourceType,
+            ImagenUrl = storedImagen?.Url ?? existente.ImagenUrl,
+            ImagenPublicId = storedImagen?.PublicId ?? existente.ImagenPublicId,
+            ImagenResourceType = storedImagen?.ResourceType ?? existente.ImagenResourceType,
             FechaCreacion = existente.FechaCreacion,
             FechaActualizacion = DateTime.UtcNow
         };
@@ -276,24 +313,49 @@ public class ProductoService : IProductoService
         bool updated;
         try
         {
-            updated = await _productoRepository.UpdateProductoAsync(actualizado);
+            updated = await _productoRepository.UpdateProductoAsync(actualizado, cancellationToken);
         }
         catch (MySqlException ex) when (IsDuplicateKey(ex))
         {
+            await TryDeleteStoredImagenAsync(storedImagen, CancellationToken.None);
             return ProductoOperationResult.ConflictError();
         }
         catch (MySqlException ex) when (IsForeignKeyViolation(ex))
         {
+            await TryDeleteStoredImagenAsync(storedImagen, CancellationToken.None);
             return ProductoOperationResult.RelatedNotFoundError();
         }
         catch (MySqlException)
         {
+            await TryDeleteStoredImagenAsync(storedImagen, CancellationToken.None);
+            return ProductoOperationResult.UnexpectedError();
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            await TryDeleteStoredImagenAsync(storedImagen, CancellationToken.None);
+            throw;
+        }
+        catch (Exception)
+        {
+            await TryDeleteStoredImagenAsync(storedImagen, CancellationToken.None);
             return ProductoOperationResult.UnexpectedError();
         }
 
         if (!updated)
         {
+            await TryDeleteStoredImagenAsync(storedImagen, CancellationToken.None);
             return ProductoOperationResult.NotFoundError();
+        }
+
+        if (storedImagen is not null)
+        {
+            try
+            {
+                await _productoImagenStorageService.DeleteAsync(existente.ImagenPublicId, CancellationToken.None);
+            }
+            catch (Exception)
+            {
+            }
         }
 
         return ProductoOperationResult.Success(MapToGetProductoDTO(actualizado));

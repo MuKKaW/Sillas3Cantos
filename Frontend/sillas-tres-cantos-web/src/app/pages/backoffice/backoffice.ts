@@ -1,5 +1,5 @@
-import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
-import { Component, ElementRef, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
+import { CommonModule, CurrencyPipe, DOCUMENT, DatePipe } from '@angular/common';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -38,17 +38,21 @@ interface ProductosCategoriaGrupo {
   templateUrl: './backoffice.html',
   styleUrl: './backoffice.scss',
 })
-export class Backoffice implements OnInit {
+export class Backoffice implements OnInit, OnDestroy {
   @ViewChild('productoImagenInput') private productoImagenInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('editProductoImagenInput') private editProductoImagenInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('productoArchivoInput') private productoArchivoInput?: ElementRef<HTMLInputElement>;
 
   private readonly api = inject(BackendApiService);
   private readonly authService = inject(AuthService);
+  private readonly document = inject(DOCUMENT);
   private readonly router = inject(Router);
 
   readonly isSuperAdmin = this.authService.isSuperAdmin;
   readonly activeTab = signal<BackofficeTab>('productos');
   readonly loading = signal(false);
   readonly uploading = signal(false);
+  readonly savingProducto = signal(false);
   readonly guardandoConfiguracion = signal(false);
   readonly statusMessage = signal('');
   readonly errorMessage = signal('');
@@ -111,6 +115,7 @@ export class Backoffice implements OnInit {
   };
 
   editProductoId: number | null = null;
+  editProductoActual: Producto | null = null;
   editProducto: PutProducto = {};
   editCategoriaId: number | null = null;
   editCategoria: PutCategoria = {};
@@ -123,6 +128,7 @@ export class Backoffice implements OnInit {
   productoArchivosActualId = 0;
   selectedUploadFile: File | null = null;
   selectedProductoImagen: File | null = null;
+  selectedEditProductoImagen: File | null = null;
 
   externosQuery = 'chair';
   externosLimit = 8;
@@ -130,6 +136,10 @@ export class Backoffice implements OnInit {
 
   async ngOnInit(): Promise<void> {
     await this.cargarDatosIniciales();
+  }
+
+  ngOnDestroy(): void {
+    this.setBodyScrollLocked(false);
   }
 
   async cargarDatosIniciales(): Promise<void> {
@@ -304,8 +314,9 @@ export class Backoffice implements OnInit {
     this.expandedCategoriaIds.set(expanded);
   }
 
-  empezarEdicionProducto(producto: Producto): void {
+  async empezarEdicionProducto(producto: Producto): Promise<void> {
     this.editProductoId = producto.id;
+    this.editProductoActual = producto;
     this.editProducto = {
       nombre: producto.nombre,
       descripcion: producto.descripcion,
@@ -315,22 +326,44 @@ export class Backoffice implements OnInit {
       marcaId: producto.marcaId,
       esVisible: producto.esVisible
     };
+    this.selectedEditProductoImagen = null;
+    this.setBodyScrollLocked(true);
+    await this.cargarArchivosProducto(producto.id);
   }
 
   cancelarEdicionProducto(): void {
     this.editProductoId = null;
+    this.editProductoActual = null;
     this.editProducto = {};
+    this.selectedEditProductoImagen = null;
+    this.selectedUploadFile = null;
+    this.productoArchivosActual = [];
+    this.productoArchivosActualId = 0;
+    this.uploading.set(false);
+    this.savingProducto.set(false);
+    this.setBodyScrollLocked(false);
+
+    if (this.editProductoImagenInput) {
+      this.editProductoImagenInput.nativeElement.value = '';
+    }
+
+    if (this.productoArchivoInput) {
+      this.productoArchivoInput.nativeElement.value = '';
+    }
   }
 
   async guardarEdicionProducto(productoId: number): Promise<void> {
+    this.savingProducto.set(true);
     try {
-      await firstValueFrom(this.api.updateProducto(productoId, this.editProducto));
-      this.cancelarEdicionProducto();
+      await firstValueFrom(this.api.updateProducto(productoId, this.editProducto, this.selectedEditProductoImagen));
       await this.cargarProductos();
+      this.cancelarEdicionProducto();
       this.statusMessage.set('Producto actualizado.');
     } catch (error) {
       console.error(error);
       this.errorMessage.set('No se pudo actualizar el producto.');
+    } finally {
+      this.savingProducto.set(false);
     }
   }
 
@@ -343,8 +376,7 @@ export class Backoffice implements OnInit {
       await firstValueFrom(this.api.deleteProducto(productoId));
       await this.cargarProductos();
       if (this.productoArchivosActualId === productoId) {
-        this.productoArchivosActual = [];
-        this.productoArchivosActualId = 0;
+        this.cancelarEdicionProducto();
       }
       this.statusMessage.set('Producto eliminado.');
     } catch (error) {
@@ -605,16 +637,27 @@ export class Backoffice implements OnInit {
     this.uploading.set(true);
 
     try {
-      this.productoArchivosActual = await firstValueFrom(
+      const archivos = await firstValueFrom(
         this.api.getProductoArchivos(productoId, true)
       );
+
+      if (this.productoArchivosActualId !== productoId) {
+        return;
+      }
+
+      this.productoArchivosActual = archivos;
       this.statusMessage.set(`Archivos cargados (${this.productoArchivosActual.length}).`);
     } catch (error) {
       console.error(error);
       this.errorMessage.set('No se pudieron cargar archivos del producto.');
-      this.productoArchivosActual = [];
+
+      if (this.productoArchivosActualId === productoId) {
+        this.productoArchivosActual = [];
+      }
     } finally {
-      this.uploading.set(false);
+      if (this.productoArchivosActualId === productoId) {
+        this.uploading.set(false);
+      }
     }
   }
 
@@ -629,6 +672,11 @@ export class Backoffice implements OnInit {
     this.selectedProductoImagen = input.files?.[0] ?? null;
   }
 
+  onEditProductoImagenSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.selectedEditProductoImagen = input.files?.[0] ?? null;
+  }
+
   async subirArchivoProducto(): Promise<void> {
     if (!this.productoArchivosActualId || !this.selectedUploadFile) {
       this.errorMessage.set('Selecciona producto y archivo antes de subir.');
@@ -641,6 +689,10 @@ export class Backoffice implements OnInit {
         this.api.uploadProductoArchivo(this.productoArchivosActualId, this.selectedUploadFile)
       );
       await this.cargarArchivosProducto(this.productoArchivosActualId);
+      this.selectedUploadFile = null;
+      if (this.productoArchivoInput) {
+        this.productoArchivoInput.nativeElement.value = '';
+      }
       this.statusMessage.set('Archivo subido.');
     } catch (error) {
       console.error(error);
@@ -705,10 +757,6 @@ export class Backoffice implements OnInit {
     return this.marcas.find((marca) => marca.id === marcaId)?.nombre ?? 'Sin marca';
   }
 
-  productoArchivosActualNombre(): string {
-    return this.productos.find((producto) => producto.id === this.productoArchivosActualId)?.nombre ?? 'Producto seleccionado';
-  }
-
   private abrirCategoriasConProductos(): void {
     this.expandedCategoriaIds.set(new Set(this.productos.map((producto) => producto.categoriaId || 0)));
   }
@@ -728,5 +776,9 @@ export class Backoffice implements OnInit {
     if (this.productoImagenInput) {
       this.productoImagenInput.nativeElement.value = '';
     }
+  }
+
+  private setBodyScrollLocked(isLocked: boolean): void {
+    this.document.body.classList.toggle('modal-open', isLocked);
   }
 }

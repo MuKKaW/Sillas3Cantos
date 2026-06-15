@@ -481,16 +481,14 @@ address a {
   margin-bottom: 0.45rem;
 }
 
-.product-modal-summary,
-.product-modal-files ul {
+.product-modal-summary {
   display: grid;
   gap: 0.7rem;
   margin: 1rem 0 0;
   padding: 0;
 }
 
-.product-modal-summary div,
-.product-modal-files li {
+.product-modal-summary div {
   display: flex;
   justify-content: space-between;
   gap: 1rem;
@@ -500,8 +498,7 @@ address a {
   background: #f8fbff;
 }
 
-.product-modal-summary dt,
-.product-modal-files small {
+.product-modal-summary dt {
   color: var(--ink-300);
 }
 
@@ -512,30 +509,12 @@ address a {
   text-align: right;
 }
 
-.product-modal-files {
-  margin-top: 1.2rem;
-}
-
-.product-modal-files h3 {
-  margin-bottom: 0.35rem;
-}
-
-.product-modal-files li {
-  align-items: center;
-  list-style: none;
-}
-
-.product-modal-files small {
-  display: block;
-}
-
 @media (max-width: 640px) {
   .product-modal {
     max-height: 90vh;
   }
 
-  .product-modal-summary div,
-  .product-modal-files li {
+  .product-modal-summary div {
     flex-direction: column;
   }
 

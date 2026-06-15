@@ -185,7 +185,36 @@ export class BackendApiService {
     return this.http.post<Producto>(`${API_BASE_URL}/productos`, formData);
   }
 
-  updateProducto(id: number, payload: PutProducto): Observable<void> {
+  updateProducto(id: number, payload: PutProducto, imagen?: File | null): Observable<void> {
+    if (imagen) {
+      const formData = new FormData();
+
+      if (payload.nombre !== undefined && payload.nombre !== null) {
+        formData.append('Nombre', payload.nombre);
+      }
+      if (payload.descripcion !== undefined && payload.descripcion !== null) {
+        formData.append('Descripcion', payload.descripcion);
+      }
+      if (payload.precio !== undefined && payload.precio !== null) {
+        formData.append('Precio', String(payload.precio));
+      }
+      if (payload.stock !== undefined && payload.stock !== null) {
+        formData.append('Stock', String(payload.stock));
+      }
+      if (payload.categoriaId !== undefined && payload.categoriaId !== null) {
+        formData.append('CategoriaId', String(payload.categoriaId));
+      }
+      if (payload.marcaId !== undefined && payload.marcaId !== null) {
+        formData.append('MarcaId', String(payload.marcaId));
+      }
+      if (payload.esVisible !== undefined && payload.esVisible !== null) {
+        formData.append('EsVisible', String(payload.esVisible));
+      }
+      formData.append('Imagen', imagen, imagen.name);
+
+      return this.http.put<void>(`${API_BASE_URL}/productos/${id}`, formData);
+    }
+
     return this.http.put<void>(`${API_BASE_URL}/productos/${id}`, payload);
   }
 

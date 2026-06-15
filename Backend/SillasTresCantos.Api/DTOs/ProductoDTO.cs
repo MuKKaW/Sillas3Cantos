@@ -40,6 +40,7 @@ public class PutProductoDTO
     public int? CategoriaId { get; set; }
     public int? MarcaId { get; set; }
     public bool? EsVisible { get; set; }
+    public IFormFile? Imagen { get; set; }
     public PutProductoDTO() { }
 }
 

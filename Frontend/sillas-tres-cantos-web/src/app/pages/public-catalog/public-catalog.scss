@@ -306,8 +306,7 @@ h3 {
 .status,
 .product-modal-backdrop,
 .product-modal,
-.product-modal-summary div,
-.product-modal-files li {
+.product-modal-summary div {
   animation: catalogFadeIn 420ms ease-out both;
 }
 
@@ -506,7 +505,6 @@ address a {
   .product-modal-backdrop,
   .product-modal,
   .product-modal-summary div,
-  .product-modal-files li,
   .brand-filter-group {
     animation: none;
   }

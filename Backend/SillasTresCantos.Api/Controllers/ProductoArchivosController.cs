@@ -18,6 +18,7 @@ public class ProductoArchivosController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize]
     public async Task<ActionResult<List<GetProductoArchivoDTO>>> GetArchivosProducto(
         int productoId,
         [FromQuery] bool includeHidden = false,
@@ -41,6 +42,7 @@ public class ProductoArchivosController : ControllerBase
     }
 
     [HttpGet("{archivoId:int}")]
+    [Authorize]
     public async Task<IActionResult> DownloadArchivo(
         int productoId,
         int archivoId,

@@ -245,67 +245,26 @@
                           }
                         </td>
                         <td>
-                          @if (editProductoId === producto.id) {
-                            <input [(ngModel)]="editProducto.nombre" />
-                          } @else {
-                            {{ producto.nombre }}
-                          }
+                          {{ producto.nombre }}
                         </td>
                         <td>
-                          @if (editProductoId === producto.id) {
-                            <input type="number" [(ngModel)]="editProducto.precio" />
-                          } @else {
-                            {{ producto.precio | currency:'EUR':'symbol':'1.2-2' }}
-                          }
+                          {{ producto.precio | currency:'EUR':'symbol':'1.2-2' }}
                         </td>
                         <td>
-                          @if (editProductoId === producto.id) {
-                            <input type="number" [(ngModel)]="editProducto.stock" />
-                          } @else {
-                            {{ producto.stock }}
-                          }
+                          {{ producto.stock }}
                         </td>
                         <td>
-                          @if (editProductoId === producto.id) {
-                            <select [(ngModel)]="editProducto.categoriaId">
-                              @for (categoria of categorias; track categoria.id) {
-                                <option [ngValue]="categoria.id">{{ categoria.nombre }}</option>
-                              }
-                            </select>
-                          } @else {
-                            {{ grupo.categoriaNombre }}
-                          }
+                          {{ grupo.categoriaNombre }}
                         </td>
                         <td>
-                          @if (editProductoId === producto.id) {
-                            <select [(ngModel)]="editProducto.marcaId">
-                              @for (marca of marcas; track marca.id) {
-                                <option [ngValue]="marca.id">{{ marca.nombre }}</option>
-                              }
-                            </select>
-                          } @else {
-                            {{ marcaNombre(producto.marcaId) }}
-                          }
+                          {{ marcaNombre(producto.marcaId) }}
                         </td>
                         <td>
-                          @if (editProductoId === producto.id) {
-                            <select [(ngModel)]="editProducto.esVisible">
-                              <option [ngValue]="true">Si</option>
-                              <option [ngValue]="false">No</option>
-                            </select>
-                          } @else {
-                            {{ producto.esVisible ? 'Si' : 'No' }}
-                          }
+                          {{ producto.esVisible ? 'Si' : 'No' }}
                         </td>
                         <td class="actions-cell">
-                          @if (editProductoId === producto.id) {
-                            <button type="button" class="btn" (click)="guardarEdicionProducto(producto.id)">Guardar</button>
-                            <button type="button" class="btn ghost" (click)="cancelarEdicionProducto()">Cancelar</button>
-                          } @else {
-                            <button type="button" class="btn ghost" (click)="empezarEdicionProducto(producto)">Editar</button>
-                            <button type="button" class="btn warn" (click)="cargarArchivosProducto(producto.id)">Ver archivos</button>
-                            <button type="button" class="btn danger" (click)="eliminarProducto(producto.id)">Borrar</button>
-                          }
+                          <button type="button" class="btn ghost" (click)="empezarEdicionProducto(producto)">Editar</button>
+                          <button type="button" class="btn danger" (click)="eliminarProducto(producto.id)">Borrar</button>
                         </td>
                       </tr>
                     }
@@ -319,34 +278,148 @@
     }
   </section>
 
-  @if (productoArchivosActualId > 0) {
-    <section class="panel files-panel">
-      <div class="panel-title">
-        <div>
-          <p class="eyebrow">Documentación</p>
-          <h3>Archivos del producto</h3>
-          <p class="muted">{{ productoArchivosActualNombre() }}</p>
-        </div>
-        <span class="pill">Producto {{ productoArchivosActualId }}</span>
-      </div>
+  @if (editProductoActual) {
+    <section class="edit-modal-backdrop" role="presentation" (click)="cancelarEdicionProducto()">
+      <article
+        class="edit-product-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="editProductModalTitle"
+        (click)="$event.stopPropagation()"
+      >
+        <button type="button" class="modal-close" aria-label="Cerrar editor" (click)="cancelarEdicionProducto()">×</button>
 
-      @if (uploading()) {
-        <p class="status">Cargando archivos disponibles...</p>
-      } @else if (productoArchivosActual.length === 0) {
-        <p class="muted">Este producto no tiene archivos disponibles para descargar.</p>
-      } @else {
-        <ul class="file-list">
-          @for (archivo of productoArchivosActual; track archivo.id) {
-            <li>
-              <div>
-                <strong>{{ archivo.nombreOriginal }}</strong>
-                <small>{{ archivo.fechaSubida | date:'short' }} · {{ archivo.contentType }}</small>
+        <div class="edit-modal-heading">
+          <div>
+            <p class="eyebrow">Producto {{ editProductoActual.id }}</p>
+            <h2 id="editProductModalTitle">Editar producto</h2>
+            <p class="muted">{{ editProductoActual.nombre }}</p>
+          </div>
+          <span class="pill">{{ editProductoActual.esVisible ? 'Visible' : 'Oculto' }}</span>
+        </div>
+
+        <div class="edit-product-grid">
+          <section class="edit-product-media">
+            @if (editProductoActual.imagenUrl) {
+              <img [src]="editProductoActual.imagenUrl" [alt]="editProductoActual.nombre" />
+            } @else {
+              <span>Sin imagen</span>
+            }
+            <div class="field image-field">
+              <label>Cambiar imagen</label>
+              <input
+                #editProductoImagenInput
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                (change)="onEditProductoImagenSelected($event)"
+              />
+              @if (selectedEditProductoImagen) {
+                <small>{{ selectedEditProductoImagen.name }}</small>
+              }
+            </div>
+          </section>
+
+          <section class="edit-product-form">
+            <div class="field-grid">
+              <div class="field">
+                <label>Nombre</label>
+                <input [(ngModel)]="editProducto.nombre" />
               </div>
-              <button type="button" class="btn alt" (click)="descargarArchivoProducto(archivo)">Descargar</button>
-            </li>
+              <div class="field">
+                <label>Precio</label>
+                <input type="number" min="0" step="0.01" [(ngModel)]="editProducto.precio" />
+              </div>
+              <div class="field">
+                <label>Stock</label>
+                <input type="number" min="0" [(ngModel)]="editProducto.stock" />
+              </div>
+              <div class="field">
+                <label>Categoria</label>
+                <select [(ngModel)]="editProducto.categoriaId">
+                  @for (categoria of categorias; track categoria.id) {
+                    <option [ngValue]="categoria.id">{{ categoria.nombre }}</option>
+                  }
+                </select>
+              </div>
+              <div class="field">
+                <label>Marca</label>
+                <select [(ngModel)]="editProducto.marcaId">
+                  @for (marca of marcas; track marca.id) {
+                    <option [ngValue]="marca.id">{{ marca.nombre }}</option>
+                  }
+                </select>
+              </div>
+              <div class="field">
+                <label>Visible</label>
+                <select [(ngModel)]="editProducto.esVisible">
+                  <option [ngValue]="true">Si</option>
+                  <option [ngValue]="false">No</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="field">
+              <label>Descripcion</label>
+              <textarea [(ngModel)]="editProducto.descripcion"></textarea>
+            </div>
+          </section>
+        </div>
+
+        <section class="modal-files-panel">
+          <div class="modal-section-title">
+            <div>
+              <h3>Archivos internos</h3>
+              <p class="muted">Visibles solo para empleados.</p>
+            </div>
+            <span class="pill">{{ productoArchivosActual.length }} archivos</span>
+          </div>
+
+          <div class="file-upload-row">
+            <input #productoArchivoInput type="file" (change)="onFileSelected($event)" />
+            <button
+              type="button"
+              class="btn alt"
+              [disabled]="uploading() || !selectedUploadFile"
+              (click)="subirArchivoProducto()"
+            >
+              {{ uploading() && selectedUploadFile ? 'Subiendo...' : 'Subir archivo' }}
+            </button>
+          </div>
+
+          @if (uploading() && !selectedUploadFile) {
+            <p class="status">Cargando archivos disponibles...</p>
+          } @else if (productoArchivosActual.length === 0) {
+            <p class="muted">Este producto no tiene archivos asociados.</p>
+          } @else {
+            <ul class="file-list modal-file-list">
+              @for (archivo of productoArchivosActual; track archivo.id) {
+                <li>
+                  <div>
+                    <strong>{{ archivo.nombreOriginal }}</strong>
+                    <small>{{ archivo.fechaSubida | date:'short' }} · {{ archivo.contentType }}</small>
+                  </div>
+                  <span class="modal-file-actions">
+                    <button type="button" class="btn alt" (click)="descargarArchivoProducto(archivo)">Descargar</button>
+                    <button type="button" class="btn danger" (click)="eliminarArchivoProducto(archivo)">Borrar</button>
+                  </span>
+                </li>
+              }
+            </ul>
           }
-        </ul>
-      }
+        </section>
+
+        <div class="modal-actions">
+          <button
+            type="button"
+            class="btn"
+            [disabled]="savingProducto()"
+            (click)="guardarEdicionProducto(editProductoActual.id)"
+          >
+            {{ savingProducto() ? 'Guardando...' : 'Guardar cambios' }}
+          </button>
+          <button type="button" class="btn ghost" (click)="cancelarEdicionProducto()">Cancelar</button>
+        </div>
+      </article>
     </section>
   }
 }

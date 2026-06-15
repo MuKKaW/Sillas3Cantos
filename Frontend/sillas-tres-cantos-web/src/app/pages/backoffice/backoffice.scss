@@ -210,6 +210,123 @@ td select {
   gap: 0.7rem;
 }
 
+.edit-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(8, 22, 40, 0.58);
+  backdrop-filter: blur(10px);
+}
+
+.edit-product-modal {
+  position: relative;
+  width: min(980px, 100%);
+  max-height: min(90vh, 860px);
+  overflow: auto;
+  border: 1px solid color-mix(in oklab, var(--surface-2) 82%, transparent);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 28px 72px rgba(8, 22, 40, 0.3);
+  padding: 1.1rem;
+}
+
+.edit-modal-heading,
+.modal-section-title,
+.modal-actions,
+.file-upload-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.edit-modal-heading {
+  padding-right: 3.2rem;
+  margin-bottom: 1rem;
+}
+
+.edit-modal-heading h2,
+.modal-section-title h3 {
+  margin-bottom: 0.25rem;
+}
+
+.edit-product-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.edit-product-media {
+  display: grid;
+  gap: 0.8rem;
+  align-content: start;
+  min-width: 0;
+}
+
+.edit-product-media img,
+.edit-product-media > span {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border: 1px solid color-mix(in oklab, var(--surface-2) 82%, transparent);
+  border-radius: 8px;
+  background: #eef5fc;
+}
+
+.edit-product-media img {
+  object-fit: cover;
+  display: block;
+}
+
+.edit-product-media > span {
+  display: grid;
+  place-items: center;
+  color: var(--ink-300);
+  font-weight: 700;
+}
+
+.edit-product-form {
+  min-width: 0;
+}
+
+.modal-files-panel {
+  margin-top: 1rem;
+  border-top: 1px solid color-mix(in oklab, var(--surface-2) 78%, transparent);
+  padding-top: 1rem;
+}
+
+.file-upload-row {
+  margin-top: 0.75rem;
+  justify-content: flex-start;
+}
+
+.file-upload-row input {
+  min-width: min(100%, 280px);
+  max-width: 100%;
+}
+
+.image-field input {
+  max-width: 100%;
+}
+
+.modal-file-list li {
+  align-items: flex-start;
+}
+
+.modal-file-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  justify-content: flex-end;
+}
+
+.modal-actions {
+  margin-top: 1rem;
+  justify-content: flex-end;
+}
+
 .admin-panel .panel-title {
   align-items: flex-start;
 }
@@ -310,6 +427,15 @@ td select {
     flex-direction: column;
     align-items: flex-start;
   }
+
+  .edit-product-modal {
+    max-height: 92vh;
+    padding: 0.95rem;
+  }
+
+  .modal-file-actions {
+    justify-content: flex-start;
+  }
 }
 
 @media (min-width: 720px) {
@@ -325,5 +451,12 @@ td select {
   .admin-settings {
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
+  }
+}
+
+@media (min-width: 860px) {
+  .edit-product-grid {
+    grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+    align-items: start;
   }
 }

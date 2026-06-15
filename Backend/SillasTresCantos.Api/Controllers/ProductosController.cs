@@ -148,10 +148,30 @@ public class ProductosController : ControllerBase
 
     [HttpPut("{id:int}")]
     [Authorize]
+    [Consumes("application/json")]
     public async Task<IActionResult> PutProducto(int id, [FromBody] PutProductoDTO producto)
     {
+        return await PutProductoCoreAsync(id, producto, HttpContext.RequestAborted);
+    }
+
+    [HttpPut("{id:int}")]
+    [Authorize]
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> PutProductoConImagen(
+        int id,
+        [FromForm] PutProductoDTO producto,
+        CancellationToken cancellationToken = default)
+    {
+        return await PutProductoCoreAsync(id, producto, cancellationToken);
+    }
+
+    private async Task<IActionResult> PutProductoCoreAsync(
+        int id,
+        PutProductoDTO producto,
+        CancellationToken cancellationToken)
+    {
         producto.Id = id;
-        ProductoOperationResult resultado = await _productoService.PutProductoAsync(producto);
+        ProductoOperationResult resultado = await _productoService.PutProductoAsync(producto, cancellationToken);
 
         return resultado.Error switch
         {
@@ -160,6 +180,8 @@ public class ProductosController : ControllerBase
             ProductoOperationError.NotFound => NotFound(),
             ProductoOperationError.RelatedNotFound => BadRequest("La categoria o la marca indicada no existe."),
             ProductoOperationError.Conflict => Conflict("Existe un conflicto con los datos del producto."),
+            ProductoOperationError.UnsupportedType => BadRequest("La imagen debe ser JPG, PNG o WEBP."),
+            ProductoOperationError.FileTooLarge => StatusCode(StatusCodes.Status413PayloadTooLarge, "La imagen supera el tamano maximo permitido."),
             _ => StatusCode(StatusCodes.Status500InternalServerError)
         };
     }
