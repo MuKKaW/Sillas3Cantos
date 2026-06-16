@@ -24,6 +24,8 @@ public class ConfiguracionCatalogoService : IConfiguracionCatalogoService
         ConfiguracionCatalogo actualizada = await _configuracionRepository.UpdateConfiguracionAsync(new ConfiguracionCatalogo
         {
             UsarFiltroTabs = configuracion.UsarFiltroTabs,
+            MostrarPrecios = configuracion.MostrarPrecios,
+            MostrarStock = configuracion.MostrarStock,
             FechaActualizacion = DateTime.UtcNow
         });
 
@@ -34,6 +36,8 @@ public class ConfiguracionCatalogoService : IConfiguracionCatalogoService
         new()
         {
             UsarFiltroTabs = configuracion.UsarFiltroTabs,
+            MostrarPrecios = configuracion.MostrarPrecios,
+            MostrarStock = configuracion.MostrarStock,
             FechaActualizacion = configuracion.FechaActualizacion
         };
 }

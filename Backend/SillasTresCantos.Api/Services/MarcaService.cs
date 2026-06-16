@@ -11,6 +11,7 @@ public class MarcaService : IMarcaService
     private const int MaxDescripcionLength = 255;
     private const int MaxPaisOrigenLength = 100;
     private const int MinAnioFundacion = 1800;
+    private const int MaxOrdenVisual = 9999;
     private readonly IMarcaRepository _marcaRepository;
 
     public MarcaService(IMarcaRepository marcaRepository)
@@ -56,12 +57,14 @@ public class MarcaService : IMarcaService
         string? descripcion = NormalizeOptional(marca.Descripcion);
         string? paisOrigen = NormalizeOptional(marca.PaisOrigen);
         int? anioFundacion = marca.AnioFundacion;
+        int ordenVisual = marca.OrdenVisual ?? 0;
         bool esVisible = marca.EsVisible ?? true;
 
         if (!IsValidNombre(nombre)
             || !IsValidDescripcion(descripcion)
             || !IsValidPaisOrigen(paisOrigen)
-            || !IsValidAnioFundacion(anioFundacion))
+            || !IsValidAnioFundacion(anioFundacion)
+            || !IsValidOrdenVisual(ordenVisual))
         {
             return MarcaOperationResult.ValidationError();
         }
@@ -79,6 +82,7 @@ public class MarcaService : IMarcaService
             Descripcion = descripcion,
             PaisOrigen = paisOrigen,
             AnioFundacion = anioFundacion,
+            OrdenVisual = ordenVisual,
             EsVisible = esVisible,
             FechaCreacion = DateTime.UtcNow,
             FechaActualizacion = null
@@ -134,12 +138,14 @@ public class MarcaService : IMarcaService
             ? existente.PaisOrigen
             : NormalizeOptional(marca.PaisOrigen);
         int? anioFundacionFinal = marca.AnioFundacion ?? existente.AnioFundacion;
+        int ordenVisualFinal = marca.OrdenVisual ?? existente.OrdenVisual;
         bool esVisibleFinal = marca.EsVisible ?? existente.EsVisible;
 
         if (!IsValidNombre(nombreFinal)
             || !IsValidDescripcion(descripcionFinal)
             || !IsValidPaisOrigen(paisOrigenFinal)
-            || !IsValidAnioFundacion(anioFundacionFinal))
+            || !IsValidAnioFundacion(anioFundacionFinal)
+            || !IsValidOrdenVisual(ordenVisualFinal))
         {
             return MarcaOperationResult.ValidationError();
         }
@@ -157,6 +163,7 @@ public class MarcaService : IMarcaService
             Descripcion = descripcionFinal,
             PaisOrigen = paisOrigenFinal,
             AnioFundacion = anioFundacionFinal,
+            OrdenVisual = ordenVisualFinal,
             EsVisible = esVisibleFinal,
             FechaCreacion = existente.FechaCreacion,
             FechaActualizacion = DateTime.UtcNow
@@ -208,6 +215,7 @@ public class MarcaService : IMarcaService
             Descripcion = marca.Descripcion,
             PaisOrigen = marca.PaisOrigen,
             AnioFundacion = marca.AnioFundacion,
+            OrdenVisual = marca.OrdenVisual,
             EsVisible = marca.EsVisible,
             FechaCreacion = marca.FechaCreacion,
             FechaActualizacion = marca.FechaActualizacion
@@ -232,6 +240,9 @@ public class MarcaService : IMarcaService
         int maxAnio = DateTime.UtcNow.Year + 1;
         return anioFundacion.Value >= MinAnioFundacion && anioFundacion.Value <= maxAnio;
     }
+
+    private static bool IsValidOrdenVisual(int ordenVisual) =>
+        ordenVisual >= 0 && ordenVisual <= MaxOrdenVisual;
 
     private static string? NormalizeOptional(string? value)
     {

@@ -1,7 +1,6 @@
 using System.Text;
 using dotenv.net;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using SillasTresCantos.Api.Configuration;
@@ -24,7 +23,6 @@ builder.Services.AddScoped<IProductoImagenStorageService, CloudinaryProductoImag
 builder.Services.AddSingleton<CloudinaryWrapper>();
 builder.Services.Configure<DatabaseOptions>(builder.Configuration.GetSection(DatabaseOptions.SectionName));
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
-builder.Services.Configure<DummyJsonOptions>(builder.Configuration.GetSection(DummyJsonOptions.SectionName));
 builder.Services.Configure<FileStorageOptions>(builder.Configuration.GetSection(FileStorageOptions.SectionName));
 builder.Services.AddSingleton<IDbConnectionFactory, MySqlConnectionFactory>();
 builder.Services.AddScoped<IUsuarioRepository, MySqlUsuarioRepository>();
@@ -35,28 +33,6 @@ builder.Services.AddScoped<IProductoRepository, MySqlProductoRepository>();
 builder.Services.AddScoped<IProductoArchivoRepository, MySqlProductoArchivoRepository>();
 builder.Services.AddSingleton<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddHttpClient<IProductosExternosService, DummyJsonProductosExternosService>((serviceProvider, client) =>
-{
-    DummyJsonOptions options = serviceProvider.GetRequiredService<IOptions<DummyJsonOptions>>().Value;
-
-    string baseUrl = string.IsNullOrWhiteSpace(options.BaseUrl)
-        ? "https://dummyjson.com/"
-        : options.BaseUrl.Trim();
-
-    if (!baseUrl.EndsWith('/'))
-    {
-        baseUrl += "/";
-    }
-
-    if (!Uri.TryCreate(baseUrl, UriKind.Absolute, out Uri? baseUri))
-    {
-        baseUri = new Uri("https://dummyjson.com/", UriKind.Absolute);
-    }
-
-    client.BaseAddress = baseUri;
-    int timeoutSeconds = options.TimeoutSeconds <= 0 ? 5 : options.TimeoutSeconds;
-    client.Timeout = TimeSpan.FromSeconds(timeoutSeconds);
-});
 builder.Services.AddEndpointsApiExplorer();
 
 JwtOptions jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>() ?? new JwtOptions();

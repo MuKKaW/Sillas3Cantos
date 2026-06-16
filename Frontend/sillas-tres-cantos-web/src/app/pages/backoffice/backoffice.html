@@ -31,9 +31,6 @@
     >
       Administracion
     </button>
-    <button type="button" class="tab-btn" [class.active]="activeTab() === 'externos'" (click)="setTab('externos')">
-      Integracion externa
-    </button>
     @if (canManageUsers()) {
       <button type="button" class="tab-btn" [class.active]="activeTab() === 'usuarios'" (click)="setTab('usuarios')">
         Usuarios
@@ -436,10 +433,6 @@
         <input [(ngModel)]="newCategoria.nombre" />
       </div>
       <div class="field">
-        <label>Orden</label>
-        <input type="number" [(ngModel)]="newCategoria.ordenVisual" />
-      </div>
-      <div class="field">
         <label>Visible</label>
         <select [(ngModel)]="newCategoria.esVisible">
           <option [ngValue]="true">Si</option>
@@ -454,61 +447,107 @@
     <button type="button" class="btn alt" (click)="crearCategoria()">Crear categoria</button>
   </section>
 
-  <section class="panel table-panel">
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Nombre</th>
-            <th>Orden</th>
-            <th>Visible</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (categoria of categorias; track categoria.id) {
-            <tr>
-              <td>{{ categoria.id }}</td>
-              <td>
-                @if (editCategoriaId === categoria.id) {
-                  <input [(ngModel)]="editCategoria.nombre" />
-                } @else {
-                  {{ categoria.nombre }}
-                }
-              </td>
-              <td>
-                @if (editCategoriaId === categoria.id) {
-                  <input type="number" [(ngModel)]="editCategoria.ordenVisual" />
-                } @else {
-                  {{ categoria.ordenVisual }}
-                }
-              </td>
-              <td>
-                @if (editCategoriaId === categoria.id) {
-                  <select [(ngModel)]="editCategoria.esVisible">
-                    <option [ngValue]="true">Si</option>
-                    <option [ngValue]="false">No</option>
-                  </select>
-                } @else {
-                  {{ categoria.esVisible ? 'Si' : 'No' }}
-                }
-              </td>
-              <td class="actions-cell">
-                @if (editCategoriaId === categoria.id) {
-                  <button type="button" class="btn" (click)="guardarEdicionCategoria(categoria.id)">Guardar</button>
-                  <button type="button" class="btn ghost" (click)="cancelarEdicionCategoria()">Cancelar</button>
-                } @else {
-                  <button type="button" class="btn ghost" (click)="empezarEdicionCategoria(categoria)">Editar</button>
-                  <button type="button" class="btn danger" (click)="eliminarCategoria(categoria.id)">Borrar</button>
-                }
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
+  <section class="panel sortable-panel">
+    <div class="panel-title">
+      <h3>Orden de categorias</h3>
+      <span class="pill">{{ categorias.length }} categorias</span>
     </div>
+
+    @if (categorias.length === 0) {
+      <p class="muted">No hay categorias creadas.</p>
+    } @else {
+      <div
+        class="sortable-list"
+        [class.settling]="settlingList() === 'categorias'"
+        (dragover)="onReorderListDragOver('categorias', $event)"
+        (drop)="onReorderListDrop('categorias', $event)"
+      >
+        @for (categoria of categorias; track categoria.id; let index = $index) {
+          <article
+            class="sortable-item"
+            [class.dragging]="isDraggingItem('categorias', index)"
+            [class.drop-before]="isDropBefore('categorias', index)"
+            [class.drop-after]="isDropAfter('categorias', index)"
+            [draggable]="editCategoriaId !== categoria.id"
+            (dragstart)="onReorderDragStart('categorias', index, $event)"
+            (dragover)="onReorderItemDragOver('categorias', index, $event)"
+            (drop)="onReorderItemDrop('categorias', index, $event)"
+            (dragend)="onReorderDragEnd()"
+          >
+            <button type="button" class="drag-handle" aria-label="Reordenar categoria">
+              <span aria-hidden="true">⋮⋮</span>
+            </button>
+            <span class="sort-position">{{ index + 1 }}</span>
+
+            <div class="sortable-main">
+              <div class="sortable-title-row">
+                <strong>{{ categoria.nombre }}</strong>
+                <span class="visibility-chip" [class.hidden]="!categoria.esVisible">
+                  {{ categoria.esVisible ? 'Visible' : 'Oculta' }}
+                </span>
+              </div>
+
+              <p class="sortable-description">{{ categoria.descripcion || 'Sin descripcion' }}</p>
+            </div>
+
+            <div class="sortable-actions">
+              <button type="button" class="btn ghost" (click)="empezarEdicionCategoria(categoria)">Editar</button>
+              <button type="button" class="btn danger" (click)="eliminarCategoria(categoria.id)">Borrar</button>
+            </div>
+          </article>
+        }
+      </div>
+    }
   </section>
+
+  @if (editCategoriaActual) {
+    <section class="edit-modal-backdrop" role="presentation" (click)="cancelarEdicionCategoria()">
+      <article
+        class="edit-product-modal catalog-edit-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="editCategoryModalTitle"
+        (click)="$event.stopPropagation()"
+      >
+        <button type="button" class="modal-close" aria-label="Cerrar editor" (click)="cancelarEdicionCategoria()">×</button>
+
+        <div class="edit-modal-heading">
+          <div>
+            <p class="eyebrow">Categoria {{ editCategoriaActual.id }}</p>
+            <h2 id="editCategoryModalTitle">Editar categoria</h2>
+            <p class="muted">{{ editCategoriaActual.nombre }}</p>
+          </div>
+          <span class="pill">Orden {{ editCategoriaActual.ordenVisual }}</span>
+        </div>
+
+        <section class="catalog-edit-form">
+          <div class="field-grid">
+            <div class="field">
+              <label>Nombre</label>
+              <input [(ngModel)]="editCategoria.nombre" />
+            </div>
+            <div class="field">
+              <label>Visible</label>
+              <select [(ngModel)]="editCategoria.esVisible">
+                <option [ngValue]="true">Si</option>
+                <option [ngValue]="false">No</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Descripcion</label>
+            <textarea [(ngModel)]="editCategoria.descripcion"></textarea>
+          </div>
+        </section>
+
+        <div class="modal-actions">
+          <button type="button" class="btn" (click)="guardarEdicionCategoria(editCategoriaActual.id)">Guardar cambios</button>
+          <button type="button" class="btn ghost" (click)="cancelarEdicionCategoria()">Cancelar</button>
+        </div>
+      </article>
+    </section>
+  }
 }
 
 @if (activeTab() === 'marcas') {
@@ -547,69 +586,122 @@
     <button type="button" class="btn alt" (click)="crearMarca()">Crear marca</button>
   </section>
 
-  <section class="panel table-panel">
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Nombre</th>
-            <th>Pais</th>
-            <th>Año</th>
-            <th>Visible</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (marca of marcas; track marca.id) {
-            <tr>
-              <td>{{ marca.id }}</td>
-              <td>
-                @if (editMarcaId === marca.id) {
-                  <input [(ngModel)]="editMarca.nombre" />
-                } @else {
-                  {{ marca.nombre }}
-                }
-              </td>
-              <td>
-                @if (editMarcaId === marca.id) {
-                  <input [(ngModel)]="editMarca.paisOrigen" />
-                } @else {
-                  {{ marca.paisOrigen || '-' }}
-                }
-              </td>
-              <td>
-                @if (editMarcaId === marca.id) {
-                  <input type="number" [(ngModel)]="editMarca.anioFundacion" />
-                } @else {
-                  {{ marca.anioFundacion || '-' }}
-                }
-              </td>
-              <td>
-                @if (editMarcaId === marca.id) {
-                  <select [(ngModel)]="editMarca.esVisible">
-                    <option [ngValue]="true">Si</option>
-                    <option [ngValue]="false">No</option>
-                  </select>
-                } @else {
-                  {{ marca.esVisible ? 'Si' : 'No' }}
-                }
-              </td>
-              <td class="actions-cell">
-                @if (editMarcaId === marca.id) {
-                  <button type="button" class="btn" (click)="guardarEdicionMarca(marca.id)">Guardar</button>
-                  <button type="button" class="btn ghost" (click)="cancelarEdicionMarca()">Cancelar</button>
-                } @else {
-                  <button type="button" class="btn ghost" (click)="empezarEdicionMarca(marca)">Editar</button>
-                  <button type="button" class="btn danger" (click)="eliminarMarca(marca.id)">Borrar</button>
-                }
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
+  <section class="panel sortable-panel">
+    <div class="panel-title">
+      <h3>Orden de marcas</h3>
+      <span class="pill">{{ marcas.length }} marcas</span>
     </div>
+
+    @if (marcas.length === 0) {
+      <p class="muted">No hay marcas creadas.</p>
+    } @else {
+      <div
+        class="sortable-list"
+        [class.settling]="settlingList() === 'marcas'"
+        (dragover)="onReorderListDragOver('marcas', $event)"
+        (drop)="onReorderListDrop('marcas', $event)"
+      >
+        @for (marca of marcas; track marca.id; let index = $index) {
+          <article
+            class="sortable-item"
+            [class.dragging]="isDraggingItem('marcas', index)"
+            [class.drop-before]="isDropBefore('marcas', index)"
+            [class.drop-after]="isDropAfter('marcas', index)"
+            [draggable]="editMarcaId !== marca.id"
+            (dragstart)="onReorderDragStart('marcas', index, $event)"
+            (dragover)="onReorderItemDragOver('marcas', index, $event)"
+            (drop)="onReorderItemDrop('marcas', index, $event)"
+            (dragend)="onReorderDragEnd()"
+          >
+            <button type="button" class="drag-handle" aria-label="Reordenar marca">
+              <span aria-hidden="true">⋮⋮</span>
+            </button>
+            <span class="sort-position">{{ index + 1 }}</span>
+
+            <div class="sortable-main">
+              <div class="sortable-title-row">
+                <strong>{{ marca.nombre }}</strong>
+                <span class="visibility-chip" [class.hidden]="!marca.esVisible">
+                  {{ marca.esVisible ? 'Visible' : 'Oculta' }}
+                </span>
+              </div>
+
+              <div class="sortable-meta">
+                <span>ID {{ marca.id }}</span>
+                <span>Orden {{ marca.ordenVisual }}</span>
+                <span>{{ marca.paisOrigen || 'Sin pais' }}</span>
+                <span>{{ marca.anioFundacion || 'Sin año' }}</span>
+              </div>
+
+              <p class="sortable-description">{{ marca.descripcion || 'Sin descripcion' }}</p>
+            </div>
+
+            <div class="sortable-actions">
+              <button type="button" class="btn ghost" (click)="empezarEdicionMarca(marca)">Editar</button>
+              <button type="button" class="btn danger" (click)="eliminarMarca(marca.id)">Borrar</button>
+            </div>
+          </article>
+        }
+      </div>
+    }
   </section>
+
+  @if (editMarcaActual) {
+    <section class="edit-modal-backdrop" role="presentation" (click)="cancelarEdicionMarca()">
+      <article
+        class="edit-product-modal catalog-edit-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="editBrandModalTitle"
+        (click)="$event.stopPropagation()"
+      >
+        <button type="button" class="modal-close" aria-label="Cerrar editor" (click)="cancelarEdicionMarca()">×</button>
+
+        <div class="edit-modal-heading">
+          <div>
+            <p class="eyebrow">Marca {{ editMarcaActual.id }}</p>
+            <h2 id="editBrandModalTitle">Editar marca</h2>
+            <p class="muted">{{ editMarcaActual.nombre }}</p>
+          </div>
+          <span class="pill">Orden {{ editMarcaActual.ordenVisual }}</span>
+        </div>
+
+        <section class="catalog-edit-form">
+          <div class="field-grid">
+            <div class="field">
+              <label>Nombre</label>
+              <input [(ngModel)]="editMarca.nombre" />
+            </div>
+            <div class="field">
+              <label>Pais origen</label>
+              <input [(ngModel)]="editMarca.paisOrigen" />
+            </div>
+            <div class="field">
+              <label>Año fundación</label>
+              <input type="number" [(ngModel)]="editMarca.anioFundacion" />
+            </div>
+            <div class="field">
+              <label>Visible</label>
+              <select [(ngModel)]="editMarca.esVisible">
+                <option [ngValue]="true">Si</option>
+                <option [ngValue]="false">No</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Descripcion</label>
+            <textarea [(ngModel)]="editMarca.descripcion"></textarea>
+          </div>
+        </section>
+
+        <div class="modal-actions">
+          <button type="button" class="btn" (click)="guardarEdicionMarca(editMarcaActual.id)">Guardar cambios</button>
+          <button type="button" class="btn ghost" (click)="cancelarEdicionMarca()">Cancelar</button>
+        </div>
+      </article>
+    </section>
+  }
 }
 
 @if (activeTab() === 'administracion') {
@@ -620,10 +712,15 @@
         <h2>Administracion</h2>
         <p class="muted">Preferencias globales del catalogo publico.</p>
       </div>
-      <span class="pill">{{ modoFiltroCatalogo() }}</span>
+      <div class="admin-pills">
+        <span class="pill">{{ modoFiltroCatalogo() }}</span>
+        <span class="pill">{{ modoVisibilidadCatalogo() }}</span>
+      </div>
     </div>
 
     <div class="admin-settings">
+      <h3 class="admin-settings-title">Aspectos generales de la pagina</h3>
+
       <label class="admin-toggle">
         <input type="checkbox" [(ngModel)]="configuracionCatalogo.usarFiltroTabs" />
         <span class="toggle-track" aria-hidden="true">
@@ -632,6 +729,28 @@
         <span class="toggle-copy">
           <strong>Filtro nuevo por tabs</strong>
           <small>{{ configuracionCatalogo.usarFiltroTabs ? 'Activo' : 'Filtro actual' }}</small>
+        </span>
+      </label>
+
+      <label class="admin-toggle">
+        <input type="checkbox" [(ngModel)]="configuracionCatalogo.mostrarPrecios" />
+        <span class="toggle-track" aria-hidden="true">
+          <span class="toggle-thumb"></span>
+        </span>
+        <span class="toggle-copy">
+          <strong>Mostrar precios</strong>
+          <small>{{ configuracionCatalogo.mostrarPrecios ? 'Visible para clientes' : 'Oculto para clientes' }}</small>
+        </span>
+      </label>
+
+      <label class="admin-toggle">
+        <input type="checkbox" [(ngModel)]="configuracionCatalogo.mostrarStock" />
+        <span class="toggle-track" aria-hidden="true">
+          <span class="toggle-thumb"></span>
+        </span>
+        <span class="toggle-copy">
+          <strong>Mostrar stock</strong>
+          <small>{{ configuracionCatalogo.mostrarStock ? 'Visible para clientes' : 'Oculto para clientes' }}</small>
         </span>
       </label>
 
@@ -787,41 +906,6 @@
         </tbody>
       </table>
     </div>
-  </section>
-}
-
-@if (activeTab() === 'externos') {
-  <section class="panel">
-    <div class="panel-title">
-      <h2>Búsqueda externa</h2>
-      <span class="pill">{{ externosResultado?.total || 0 }} total</span>
-    </div>
-    <div class="field-grid">
-      <div class="field">
-        <label>Búsqueda</label>
-        <input [(ngModel)]="externosQuery" />
-      </div>
-      <div class="field">
-        <label>Límite</label>
-        <input type="number" min="1" max="30" [(ngModel)]="externosLimit" />
-      </div>
-      <div class="field">
-        <label>Skip</label>
-        <input type="number" min="0" [(ngModel)]="externosSkip" />
-      </div>
-    </div>
-    <button type="button" class="btn" (click)="buscarExternos()">Buscar</button>
-  </section>
-
-  <section class="externos-grid">
-    @for (producto of externosResultado?.productos || []; track producto.idExterno) {
-      <article class="panel">
-        <h3>{{ producto.nombre }}</h3>
-        <p class="muted">{{ producto.descripcion || 'Sin descripcion' }}</p>
-        <p>{{ producto.precio | currency:'EUR':'symbol':'1.2-2' }} · Rating {{ producto.rating }}</p>
-        <p class="muted">{{ producto.categoria }} · {{ producto.marca || 'Sin marca' }}</p>
-      </article>
-    }
   </section>
 }
 

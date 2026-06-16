@@ -40,8 +40,8 @@ public class MySqlCategoriaRepository : ICategoriaRepository
         }
 
         sql.Append(orderAscent
-            ? " ORDER BY COALESCE(nombre, '') ASC"
-            : " ORDER BY COALESCE(nombre, '') DESC");
+            ? " ORDER BY orden_visual ASC, COALESCE(nombre, '') ASC"
+            : " ORDER BY orden_visual DESC, COALESCE(nombre, '') DESC");
 
         command.CommandText = sql.ToString();
 

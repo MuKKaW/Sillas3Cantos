@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS marcas (
   descripcion VARCHAR(255) NULL,
   pais_origen VARCHAR(100) NULL,
   anio_fundacion INT NULL,
+  orden_visual INT NOT NULL DEFAULT 0,
   es_visible BOOLEAN NOT NULL DEFAULT TRUE,
   fecha_creacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   fecha_actualizacion DATETIME NULL DEFAULT NULL,
@@ -72,10 +73,57 @@ CREATE TABLE IF NOT EXISTS producto_archivos (
 CREATE TABLE IF NOT EXISTS configuracion_catalogo (
   id TINYINT PRIMARY KEY,
   usar_filtro_tabs BOOLEAN NOT NULL DEFAULT FALSE,
+  mostrar_precios BOOLEAN NOT NULL DEFAULT FALSE,
+  mostrar_stock BOOLEAN NOT NULL DEFAULT FALSE,
   fecha_actualizacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 SET @schema_name = DATABASE();
+
+SET @sql = IF (
+  EXISTS (
+    SELECT 1
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = @schema_name
+      AND TABLE_NAME = 'configuracion_catalogo'
+      AND COLUMN_NAME = 'mostrar_precios'
+  ),
+  'SELECT 1',
+  'ALTER TABLE configuracion_catalogo ADD COLUMN mostrar_precios BOOLEAN NOT NULL DEFAULT FALSE AFTER usar_filtro_tabs'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @sql = IF (
+  EXISTS (
+    SELECT 1
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = @schema_name
+      AND TABLE_NAME = 'configuracion_catalogo'
+      AND COLUMN_NAME = 'mostrar_stock'
+  ),
+  'SELECT 1',
+  'ALTER TABLE configuracion_catalogo ADD COLUMN mostrar_stock BOOLEAN NOT NULL DEFAULT FALSE AFTER mostrar_precios'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @sql = IF (
+  EXISTS (
+    SELECT 1
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = @schema_name
+      AND TABLE_NAME = 'marcas'
+      AND COLUMN_NAME = 'orden_visual'
+  ),
+  'SELECT 1',
+  'ALTER TABLE marcas ADD COLUMN orden_visual INT NOT NULL DEFAULT 0 AFTER anio_fundacion'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 SET @sql = IF (
   EXISTS (
@@ -406,8 +454,8 @@ WHERE LOWER(username) = 'admin'
   AND role IS NOT NULL
   AND LOWER(role) = 'admin';
 
-INSERT INTO configuracion_catalogo (id, usar_filtro_tabs, fecha_actualizacion)
-SELECT 1, TRUE, CURRENT_TIMESTAMP
+INSERT INTO configuracion_catalogo (id, usar_filtro_tabs, mostrar_precios, mostrar_stock, fecha_actualizacion)
+SELECT 1, TRUE, FALSE, FALSE, CURRENT_TIMESTAMP
 WHERE NOT EXISTS (
   SELECT 1
   FROM configuracion_catalogo

@@ -32,7 +32,6 @@ npm run build
 - Zona publica:
   - listado y filtro de productos/categorias/marcas
   - detalle de producto y descarga de archivos
-  - busqueda de productos externos (`/api/integraciones/productos-externos`)
 - Login JWT:
   - `POST /api/auth/login`
 - Backoffice:

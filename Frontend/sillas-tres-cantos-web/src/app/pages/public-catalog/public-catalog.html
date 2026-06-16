@@ -36,7 +36,7 @@
       <p class="eyebrow">Catálogo</p>
       <h2>Consulta productos disponibles</h2>
       <p>
-        Filtra por familia o marca y abre la ficha para ver detalles y precio.
+        Filtra por familia o marca y abre la ficha para ver detalles{{ mostrarPrecios ? ' y precio' : '' }}.
       </p>
     </div>
 
@@ -183,7 +183,9 @@
             </div>
             <div class="product-meta">
               <span>{{ categoriaNombre(producto.categoriaId) }}</span>
-              <strong>{{ producto.precio | currency:'EUR':'symbol':'1.2-2' }}</strong>
+              @if (mostrarPrecios) {
+                <strong>{{ producto.precio | currency:'EUR':'symbol':'1.2-2' }}</strong>
+              }
             </div>
             <button type="button" class="card-link" (click)="seleccionarProducto(producto)">Ver ficha</button>
           </article>
@@ -262,10 +264,12 @@
       </div>
 
       <dl class="product-modal-summary">
-        <div>
-          <dt>Precio</dt>
-          <dd>{{ selectedProducto.precio | currency:'EUR':'symbol':'1.2-2' }}</dd>
-        </div>
+        @if (mostrarPrecios) {
+          <div>
+            <dt>Precio</dt>
+            <dd>{{ selectedProducto.precio | currency:'EUR':'symbol':'1.2-2' }}</dd>
+          </div>
+        }
         <div>
           <dt>Categoría</dt>
           <dd>{{ categoriaNombre(selectedProducto.categoriaId) }}</dd>
@@ -274,10 +278,12 @@
           <dt>Marca</dt>
           <dd>{{ marcaNombre(selectedProducto.marcaId) }}</dd>
         </div>
-        <div>
-          <dt>Stock</dt>
-          <dd>{{ selectedProducto.stock }}</dd>
-        </div>
+        @if (mostrarStock) {
+          <div>
+            <dt>Stock</dt>
+            <dd>{{ selectedProducto.stock }}</dd>
+          </div>
+        }
       </dl>
 
     </article>

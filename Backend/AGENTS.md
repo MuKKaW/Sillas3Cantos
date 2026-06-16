@@ -66,7 +66,6 @@ api/categorias
 api/marcas
 api/productos/{productoId}/archivos
 api/configuracion/catalogo
-api/integraciones
 api/usuarios
 ```
 
@@ -86,7 +85,9 @@ Visibilidad publica:
 - `productos.es_visible`
 - `categorias.es_visible`
 - `marcas.es_visible`
+- `categorias.orden_visual` y `marcas.orden_visual` controlan el orden publico y de backoffice.
 - `configuracion_catalogo.usar_filtro_tabs` decide si la landing usa el filtro actual o el filtro nuevo por tabs.
+- `configuracion_catalogo.mostrar_precios` y `mostrar_stock` deciden si la landing publica ensena precio y stock.
 
 El frontend publico consulta por defecto con `includeHidden=false`.
 Los archivos de producto no forman parte de la experiencia publica; quedan reservados para empleados autenticados.

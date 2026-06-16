@@ -53,11 +53,15 @@ export interface Categoria {
 
 export interface ConfiguracionCatalogo {
   usarFiltroTabs: boolean;
+  mostrarPrecios: boolean;
+  mostrarStock: boolean;
   fechaActualizacion: string;
 }
 
 export interface PutConfiguracionCatalogo {
   usarFiltroTabs: boolean;
+  mostrarPrecios: boolean;
+  mostrarStock: boolean;
 }
 
 export interface PostCategoria {
@@ -81,6 +85,7 @@ export interface Marca {
   descripcion?: string | null;
   paisOrigen?: string | null;
   anioFundacion?: number | null;
+  ordenVisual: number;
   esVisible: boolean;
   fechaCreacion: string;
   fechaActualizacion?: string | null;
@@ -91,6 +96,7 @@ export interface PostMarca {
   descripcion?: string | null;
   paisOrigen?: string | null;
   anioFundacion?: number | null;
+  ordenVisual?: number | null;
   esVisible?: boolean | null;
 }
 
@@ -100,6 +106,7 @@ export interface PutMarca {
   descripcion?: string | null;
   paisOrigen?: string | null;
   anioFundacion?: number | null;
+  ordenVisual?: number | null;
   esVisible?: boolean | null;
 }
 
@@ -148,25 +155,4 @@ export interface ProductoArchivo {
   tamanoBytes: number;
   fechaSubida: string;
   urlDescarga: string;
-}
-
-export interface ProductoExterno {
-  idExterno: number;
-  nombre: string;
-  descripcion?: string | null;
-  categoria: string;
-  marca?: string | null;
-  precio: number;
-  stock: number;
-  rating: number;
-  thumbnail?: string | null;
-}
-
-export interface BusquedaProductosExternos {
-  fuente: string;
-  query: string;
-  total: number;
-  skip: number;
-  limit: number;
-  productos: ProductoExterno[];
 }

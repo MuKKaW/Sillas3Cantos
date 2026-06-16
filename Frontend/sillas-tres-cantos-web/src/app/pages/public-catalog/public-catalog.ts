@@ -76,6 +76,8 @@ export class PublicCatalog implements OnInit, OnDestroy {
   selectedProducto: Producto | null = null;
 
   usarFiltroTabs = false;
+  mostrarPrecios = false;
+  mostrarStock = false;
   filtroNombre = '';
   filtroCategoriaId = 0;
   filtroMarcaId = 0;
@@ -101,6 +103,8 @@ export class PublicCatalog implements OnInit, OnDestroy {
     try {
       const configuracionPorDefecto: ConfiguracionCatalogo = {
         usarFiltroTabs: false,
+        mostrarPrecios: false,
+        mostrarStock: false,
         fechaActualizacion: ''
       };
       const [configuracion, categorias, marcas, productos] = await Promise.all([
@@ -111,6 +115,8 @@ export class PublicCatalog implements OnInit, OnDestroy {
       ]);
 
       this.usarFiltroTabs = configuracion.usarFiltroTabs;
+      this.mostrarPrecios = configuracion.mostrarPrecios;
+      this.mostrarStock = configuracion.mostrarStock;
       this.categorias = categorias;
       this.marcas = marcas;
       this.productos = productos;

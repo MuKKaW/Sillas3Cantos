@@ -3,7 +3,6 @@ import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { API_BASE_URL } from '../config/api.config';
 import {
-  BusquedaProductosExternos,
   Categoria,
   ConfiguracionCatalogo,
   Marca,
@@ -40,12 +39,6 @@ export interface CatalogoQuery {
 @Injectable({ providedIn: 'root' })
 export class BackendApiService {
   private readonly http = inject(HttpClient);
-
-  loginPing(): Observable<string> {
-    return this.http.get(`${API_BASE_URL}/integraciones/productos-externos?query=chair&limit=1&skip=0`, {
-      responseType: 'text'
-    });
-  }
 
   getCategorias(query: CatalogoQuery = {}): Observable<Categoria[]> {
     let params = new HttpParams();
@@ -269,11 +262,4 @@ export class BackendApiService {
     return this.http.delete<void>(`${API_BASE_URL}/usuarios/${id}`);
   }
 
-  buscarProductosExternos(query: string, limit = 10, skip = 0): Observable<BusquedaProductosExternos> {
-    const params = new HttpParams()
-      .set('query', query)
-      .set('limit', String(limit))
-      .set('skip', String(skip));
-    return this.http.get<BusquedaProductosExternos>(`${API_BASE_URL}/integraciones/productos-externos`, { params });
-  }
 }

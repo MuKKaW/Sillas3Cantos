@@ -19,7 +19,9 @@ public class MySqlMarcaRepository : IMarcaRepository
         await using MySqlConnection connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
         await using MySqlCommand command = connection.CreateCommand();
 
-        StringBuilder sql = new("SELECT id, nombre, descripcion, pais_origen, anio_fundacion, es_visible, fecha_creacion, fecha_actualizacion FROM marcas");
+        await EnsureOrdenVisualColumnAsync(connection, cancellationToken);
+
+        StringBuilder sql = new("SELECT id, nombre, descripcion, pais_origen, anio_fundacion, orden_visual, es_visible, fecha_creacion, fecha_actualizacion FROM marcas");
         List<string> whereClauses = [];
 
         if (idMarca > 0)
@@ -40,8 +42,8 @@ public class MySqlMarcaRepository : IMarcaRepository
         }
 
         sql.Append(orderAscent
-            ? " ORDER BY COALESCE(nombre, '') ASC"
-            : " ORDER BY COALESCE(nombre, '') DESC");
+            ? " ORDER BY orden_visual ASC, COALESCE(nombre, '') ASC"
+            : " ORDER BY orden_visual DESC, COALESCE(nombre, '') DESC");
 
         command.CommandText = sql.ToString();
 
@@ -58,10 +60,11 @@ public class MySqlMarcaRepository : IMarcaRepository
     public async Task<Marca?> GetMarcaByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         await using MySqlConnection connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+        await EnsureOrdenVisualColumnAsync(connection, cancellationToken);
         await using MySqlCommand command = connection.CreateCommand();
 
         command.CommandText = """
-                              SELECT id, nombre, descripcion, pais_origen, anio_fundacion, es_visible, fecha_creacion, fecha_actualizacion
+                              SELECT id, nombre, descripcion, pais_origen, anio_fundacion, orden_visual, es_visible, fecha_creacion, fecha_actualizacion
                               FROM marcas
                               WHERE id = @id
                               LIMIT 1;
@@ -80,17 +83,19 @@ public class MySqlMarcaRepository : IMarcaRepository
     public async Task<Marca?> CreateMarcaAsync(Marca marca, CancellationToken cancellationToken = default)
     {
         await using MySqlConnection connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+        await EnsureOrdenVisualColumnAsync(connection, cancellationToken);
         await using MySqlCommand command = connection.CreateCommand();
 
         command.CommandText = """
-                              INSERT INTO marcas (nombre, descripcion, pais_origen, anio_fundacion, es_visible, fecha_creacion, fecha_actualizacion)
-                              VALUES (@nombre, @descripcion, @paisOrigen, @anioFundacion, @esVisible, @fechaCreacion, @fechaActualizacion);
+                              INSERT INTO marcas (nombre, descripcion, pais_origen, anio_fundacion, orden_visual, es_visible, fecha_creacion, fecha_actualizacion)
+                              VALUES (@nombre, @descripcion, @paisOrigen, @anioFundacion, @ordenVisual, @esVisible, @fechaCreacion, @fechaActualizacion);
                               SELECT LAST_INSERT_ID();
                               """;
         command.Parameters.AddWithValue("@nombre", marca.Nombre);
         command.Parameters.AddWithValue("@descripcion", (object?)marca.Descripcion ?? DBNull.Value);
         command.Parameters.AddWithValue("@paisOrigen", (object?)marca.PaisOrigen ?? DBNull.Value);
         command.Parameters.AddWithValue("@anioFundacion", (object?)marca.AnioFundacion ?? DBNull.Value);
+        command.Parameters.AddWithValue("@ordenVisual", marca.OrdenVisual);
         command.Parameters.AddWithValue("@esVisible", marca.EsVisible);
         command.Parameters.AddWithValue("@fechaCreacion", marca.FechaCreacion);
         command.Parameters.AddWithValue("@fechaActualizacion", (object?)marca.FechaActualizacion ?? DBNull.Value);
@@ -110,6 +115,7 @@ public class MySqlMarcaRepository : IMarcaRepository
             Descripcion = marca.Descripcion,
             PaisOrigen = marca.PaisOrigen,
             AnioFundacion = marca.AnioFundacion,
+            OrdenVisual = marca.OrdenVisual,
             EsVisible = marca.EsVisible,
             FechaCreacion = marca.FechaCreacion,
             FechaActualizacion = marca.FechaActualizacion
@@ -119,6 +125,7 @@ public class MySqlMarcaRepository : IMarcaRepository
     public async Task<bool> UpdateMarcaAsync(Marca marca, CancellationToken cancellationToken = default)
     {
         await using MySqlConnection connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+        await EnsureOrdenVisualColumnAsync(connection, cancellationToken);
         await using MySqlCommand command = connection.CreateCommand();
 
         command.CommandText = """
@@ -127,6 +134,7 @@ public class MySqlMarcaRepository : IMarcaRepository
                                   descripcion = @descripcion,
                                   pais_origen = @paisOrigen,
                                   anio_fundacion = @anioFundacion,
+                                  orden_visual = @ordenVisual,
                                   es_visible = @esVisible,
                                   fecha_actualizacion = @fechaActualizacion
                               WHERE id = @id;
@@ -136,6 +144,7 @@ public class MySqlMarcaRepository : IMarcaRepository
         command.Parameters.AddWithValue("@descripcion", (object?)marca.Descripcion ?? DBNull.Value);
         command.Parameters.AddWithValue("@paisOrigen", (object?)marca.PaisOrigen ?? DBNull.Value);
         command.Parameters.AddWithValue("@anioFundacion", (object?)marca.AnioFundacion ?? DBNull.Value);
+        command.Parameters.AddWithValue("@ordenVisual", marca.OrdenVisual);
         command.Parameters.AddWithValue("@esVisible", marca.EsVisible);
         command.Parameters.AddWithValue("@fechaActualizacion", (object?)marca.FechaActualizacion ?? DBNull.Value);
 
@@ -146,6 +155,7 @@ public class MySqlMarcaRepository : IMarcaRepository
     public async Task<bool> DeleteMarcaAsync(int id, CancellationToken cancellationToken = default)
     {
         await using MySqlConnection connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+        await EnsureOrdenVisualColumnAsync(connection, cancellationToken);
         await using MySqlCommand command = connection.CreateCommand();
 
         command.CommandText = """
@@ -187,6 +197,7 @@ public class MySqlMarcaRepository : IMarcaRepository
         int descripcionOrdinal = reader.GetOrdinal("descripcion");
         int paisOrigenOrdinal = reader.GetOrdinal("pais_origen");
         int anioFundacionOrdinal = reader.GetOrdinal("anio_fundacion");
+        int ordenVisualOrdinal = reader.GetOrdinal("orden_visual");
         int esVisibleOrdinal = reader.GetOrdinal("es_visible");
         int fechaCreacionOrdinal = reader.GetOrdinal("fecha_creacion");
         int fechaActualizacionOrdinal = reader.GetOrdinal("fecha_actualizacion");
@@ -198,9 +209,35 @@ public class MySqlMarcaRepository : IMarcaRepository
             Descripcion = reader.IsDBNull(descripcionOrdinal) ? null : reader.GetString(descripcionOrdinal),
             PaisOrigen = reader.IsDBNull(paisOrigenOrdinal) ? null : reader.GetString(paisOrigenOrdinal),
             AnioFundacion = reader.IsDBNull(anioFundacionOrdinal) ? null : reader.GetInt32(anioFundacionOrdinal),
+            OrdenVisual = reader.GetInt32(ordenVisualOrdinal),
             EsVisible = reader.GetBoolean(esVisibleOrdinal),
             FechaCreacion = reader.GetDateTime(fechaCreacionOrdinal),
             FechaActualizacion = reader.IsDBNull(fechaActualizacionOrdinal) ? null : reader.GetDateTime(fechaActualizacionOrdinal)
         };
+    }
+
+    private static async Task EnsureOrdenVisualColumnAsync(MySqlConnection connection, CancellationToken cancellationToken)
+    {
+        await using MySqlCommand checkCommand = connection.CreateCommand();
+        checkCommand.CommandText = """
+                                   SELECT COUNT(*)
+                                   FROM information_schema.COLUMNS
+                                   WHERE TABLE_SCHEMA = DATABASE()
+                                     AND TABLE_NAME = 'marcas'
+                                     AND COLUMN_NAME = 'orden_visual';
+                                   """;
+
+        object? existingColumnCount = await checkCommand.ExecuteScalarAsync(cancellationToken);
+        if (Convert.ToInt64(existingColumnCount ?? 0) > 0)
+        {
+            return;
+        }
+
+        await using MySqlCommand alterCommand = connection.CreateCommand();
+        alterCommand.CommandText = """
+                                   ALTER TABLE marcas
+                                   ADD COLUMN orden_visual INT NOT NULL DEFAULT 0 AFTER anio_fundacion;
+                                   """;
+        await alterCommand.ExecuteNonQueryAsync(cancellationToken);
     }
 }

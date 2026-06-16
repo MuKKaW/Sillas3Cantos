@@ -6,7 +6,6 @@ import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { BackendApiService } from '../../core/services/backend-api.service';
 import {
-  BusquedaProductosExternos,
   Categoria,
   ConfiguracionCatalogo,
   Marca,
@@ -23,7 +22,8 @@ import {
   Usuario
 } from '../../core/models/api.models';
 
-type BackofficeTab = 'productos' | 'categorias' | 'marcas' | 'administracion' | 'usuarios' | 'externos';
+type BackofficeTab = 'productos' | 'categorias' | 'marcas' | 'administracion' | 'usuarios';
+type SortableList = 'categorias' | 'marcas';
 
 interface ProductosCategoriaGrupo {
   categoriaId: number;
@@ -57,6 +57,7 @@ export class Backoffice implements OnInit, OnDestroy {
   readonly statusMessage = signal('');
   readonly errorMessage = signal('');
   readonly expandedCategoriaIds = signal<Set<number>>(new Set<number>());
+  readonly settlingList = signal<SortableList | null>(null);
   readonly canManageUsers = computed(() => this.isSuperAdmin());
 
   categorias: Categoria[] = [];
@@ -65,9 +66,10 @@ export class Backoffice implements OnInit, OnDestroy {
   usuarios: Usuario[] = [];
   configuracionCatalogo: ConfiguracionCatalogo = {
     usarFiltroTabs: false,
+    mostrarPrecios: false,
+    mostrarStock: false,
     fechaActualizacion: ''
   };
-  externosResultado: BusquedaProductosExternos | null = null;
 
   filtroProductosNombre = '';
   filtroProductosCategoriaId = 0;
@@ -102,6 +104,7 @@ export class Backoffice implements OnInit, OnDestroy {
     descripcion: '',
     paisOrigen: '',
     anioFundacion: null,
+    ordenVisual: 0,
     esVisible: true
   };
 
@@ -118,8 +121,10 @@ export class Backoffice implements OnInit, OnDestroy {
   editProductoActual: Producto | null = null;
   editProducto: PutProducto = {};
   editCategoriaId: number | null = null;
+  editCategoriaActual: Categoria | null = null;
   editCategoria: PutCategoria = {};
   editMarcaId: number | null = null;
+  editMarcaActual: Marca | null = null;
   editMarca: PutMarca = {};
   editUsuarioId: number | null = null;
   editUsuario: PutUsuario = {};
@@ -129,10 +134,9 @@ export class Backoffice implements OnInit, OnDestroy {
   selectedUploadFile: File | null = null;
   selectedProductoImagen: File | null = null;
   selectedEditProductoImagen: File | null = null;
-
-  externosQuery = 'chair';
-  externosLimit = 8;
-  externosSkip = 0;
+  draggedList: SortableList | null = null;
+  draggedIndex = -1;
+  dropIndex = -1;
 
   async ngOnInit(): Promise<void> {
     await this.cargarDatosIniciales();
@@ -149,6 +153,8 @@ export class Backoffice implements OnInit, OnDestroy {
     try {
       const configuracionPorDefecto: ConfiguracionCatalogo = {
         usarFiltroTabs: false,
+        mostrarPrecios: false,
+        mostrarStock: false,
         fechaActualizacion: ''
       };
       const [categorias, marcas, configuracionCatalogo] = await Promise.all([
@@ -189,7 +195,9 @@ export class Backoffice implements OnInit, OnDestroy {
     try {
       this.configuracionCatalogo = await firstValueFrom(
         this.api.updateConfiguracionCatalogo({
-          usarFiltroTabs: this.configuracionCatalogo.usarFiltroTabs
+          usarFiltroTabs: this.configuracionCatalogo.usarFiltroTabs,
+          mostrarPrecios: this.configuracionCatalogo.mostrarPrecios,
+          mostrarStock: this.configuracionCatalogo.mostrarStock
         })
       );
       this.statusMessage.set('Configuracion de la landing actualizada.');
@@ -203,6 +211,15 @@ export class Backoffice implements OnInit, OnDestroy {
 
   modoFiltroCatalogo(): string {
     return this.configuracionCatalogo.usarFiltroTabs ? 'Filtro nuevo por tabs' : 'Filtro actual';
+  }
+
+  modoVisibilidadCatalogo(): string {
+    const visibles = [
+      this.configuracionCatalogo.mostrarPrecios ? 'precios' : '',
+      this.configuracionCatalogo.mostrarStock ? 'stock' : ''
+    ].filter(Boolean);
+
+    return visibles.length > 0 ? `Muestra ${visibles.join(' y ')}` : 'Precio y stock ocultos';
   }
 
   async logout(): Promise<void> {
@@ -294,7 +311,8 @@ export class Backoffice implements OnInit, OnDestroy {
     }
 
     return Array.from(grupos.values()).sort((a, b) =>
-      a.categoriaNombre.localeCompare(b.categoriaNombre, 'es')
+      this.categoriaOrden(a.categoriaId) - this.categoriaOrden(b.categoriaId)
+      || a.categoriaNombre.localeCompare(b.categoriaNombre, 'es')
     );
   }
 
@@ -398,7 +416,12 @@ export class Backoffice implements OnInit, OnDestroy {
 
   async crearCategoria(): Promise<void> {
     try {
-      await firstValueFrom(this.api.createCategoria(this.newCategoria));
+      await firstValueFrom(
+        this.api.createCategoria({
+          ...this.newCategoria,
+          ordenVisual: this.nextOrdenVisual(this.categorias)
+        })
+      );
       this.newCategoria = {
         nombre: '',
         descripcion: '',
@@ -415,17 +438,21 @@ export class Backoffice implements OnInit, OnDestroy {
 
   empezarEdicionCategoria(categoria: Categoria): void {
     this.editCategoriaId = categoria.id;
+    this.editCategoriaActual = categoria;
     this.editCategoria = {
       nombre: categoria.nombre,
       descripcion: categoria.descripcion,
       ordenVisual: categoria.ordenVisual,
       esVisible: categoria.esVisible
     };
+    this.setBodyScrollLocked(true);
   }
 
   cancelarEdicionCategoria(): void {
     this.editCategoriaId = null;
+    this.editCategoriaActual = null;
     this.editCategoria = {};
+    this.setBodyScrollLocked(false);
   }
 
   async guardarEdicionCategoria(categoriaId: number): Promise<void> {
@@ -447,11 +474,106 @@ export class Backoffice implements OnInit, OnDestroy {
     try {
       await firstValueFrom(this.api.deleteCategoria(categoriaId));
       await this.cargarCategorias();
+      if (this.editCategoriaId === categoriaId) {
+        this.cancelarEdicionCategoria();
+      }
       this.statusMessage.set('Categoria eliminada.');
     } catch (error) {
       console.error(error);
       this.errorMessage.set('No se pudo eliminar la categoria.');
     }
+  }
+
+  onReorderDragStart(kind: SortableList, index: number, event: DragEvent): void {
+    if (this.isEditingSortableItem(kind, index)) {
+      event.preventDefault();
+      return;
+    }
+
+    this.draggedList = kind;
+    this.draggedIndex = index;
+    this.dropIndex = index;
+
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', `${kind}:${index}`);
+    }
+  }
+
+  onReorderItemDragOver(kind: SortableList, index: number, event: DragEvent): void {
+    if (!this.canDropOnList(kind)) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    this.dropIndex = this.getItemDropIndex(index, event);
+
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = 'move';
+    }
+  }
+
+  onReorderListDragOver(kind: SortableList, event: DragEvent): void {
+    if (!this.canDropOnList(kind)) {
+      return;
+    }
+
+    const target = event.target as HTMLElement | null;
+    if (target?.closest('.sortable-item')) {
+      return;
+    }
+
+    event.preventDefault();
+    this.dropIndex = this.getSortableItems(kind).length;
+
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = 'move';
+    }
+  }
+
+  async onReorderItemDrop(kind: SortableList, index: number, event: DragEvent): Promise<void> {
+    if (!this.canDropOnList(kind)) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    await this.commitReorder(kind, this.getItemDropIndex(index, event));
+  }
+
+  async onReorderListDrop(kind: SortableList, event: DragEvent): Promise<void> {
+    if (!this.canDropOnList(kind)) {
+      return;
+    }
+
+    const target = event.target as HTMLElement | null;
+    if (target?.closest('.sortable-item')) {
+      return;
+    }
+
+    event.preventDefault();
+    await this.commitReorder(kind, this.getSortableItems(kind).length);
+  }
+
+  onReorderDragEnd(): void {
+    this.clearDragState();
+  }
+
+  isDraggingItem(kind: SortableList, index: number): boolean {
+    return this.draggedList === kind && this.draggedIndex === index;
+  }
+
+  isDropBefore(kind: SortableList, index: number): boolean {
+    return this.draggedList === kind && this.dropIndex === index && this.draggedIndex !== index;
+  }
+
+  isDropAfter(kind: SortableList, index: number): boolean {
+    const items = this.getSortableItems(kind);
+    return this.draggedList === kind
+      && this.dropIndex === items.length
+      && index === items.length - 1
+      && this.draggedIndex !== index;
   }
 
   async cargarMarcas(): Promise<void> {
@@ -467,12 +589,18 @@ export class Backoffice implements OnInit, OnDestroy {
 
   async crearMarca(): Promise<void> {
     try {
-      await firstValueFrom(this.api.createMarca(this.newMarca));
+      await firstValueFrom(
+        this.api.createMarca({
+          ...this.newMarca,
+          ordenVisual: this.nextOrdenVisual(this.marcas)
+        })
+      );
       this.newMarca = {
         nombre: '',
         descripcion: '',
         paisOrigen: '',
         anioFundacion: null,
+        ordenVisual: 0,
         esVisible: true
       };
       await this.cargarMarcas();
@@ -485,18 +613,23 @@ export class Backoffice implements OnInit, OnDestroy {
 
   empezarEdicionMarca(marca: Marca): void {
     this.editMarcaId = marca.id;
+    this.editMarcaActual = marca;
     this.editMarca = {
       nombre: marca.nombre,
       descripcion: marca.descripcion,
       paisOrigen: marca.paisOrigen,
       anioFundacion: marca.anioFundacion,
+      ordenVisual: marca.ordenVisual,
       esVisible: marca.esVisible
     };
+    this.setBodyScrollLocked(true);
   }
 
   cancelarEdicionMarca(): void {
     this.editMarcaId = null;
+    this.editMarcaActual = null;
     this.editMarca = {};
+    this.setBodyScrollLocked(false);
   }
 
   async guardarEdicionMarca(marcaId: number): Promise<void> {
@@ -518,6 +651,9 @@ export class Backoffice implements OnInit, OnDestroy {
     try {
       await firstValueFrom(this.api.deleteMarca(marcaId));
       await this.cargarMarcas();
+      if (this.editMarcaId === marcaId) {
+        this.cancelarEdicionMarca();
+      }
       this.statusMessage.set('Marca eliminada.');
     } catch (error) {
       console.error(error);
@@ -733,24 +869,12 @@ export class Backoffice implements OnInit, OnDestroy {
     }
   }
 
-  async buscarExternos(): Promise<void> {
-    if (this.externosQuery.trim().length < 2) {
-      this.errorMessage.set('La query externa requiere minimo 2 caracteres.');
-      return;
-    }
-    try {
-      this.externosResultado = await firstValueFrom(
-        this.api.buscarProductosExternos(this.externosQuery.trim(), this.externosLimit, this.externosSkip)
-      );
-      this.statusMessage.set('Consulta externa completada.');
-    } catch (error) {
-      console.error(error);
-      this.errorMessage.set('No se pudo consultar la API externa.');
-    }
-  }
-
   categoriaNombre(categoriaId: number): string {
     return this.categorias.find((categoria) => categoria.id === categoriaId)?.nombre ?? 'Sin categoria';
+  }
+
+  categoriaOrden(categoriaId: number): number {
+    return this.categorias.find((categoria) => categoria.id === categoriaId)?.ordenVisual ?? Number.MAX_SAFE_INTEGER;
   }
 
   marcaNombre(marcaId: number): string {
@@ -759,6 +883,127 @@ export class Backoffice implements OnInit, OnDestroy {
 
   private abrirCategoriasConProductos(): void {
     this.expandedCategoriaIds.set(new Set(this.productos.map((producto) => producto.categoriaId || 0)));
+  }
+
+  private async commitReorder(kind: SortableList, insertIndex: number): Promise<void> {
+    if (!this.canDropOnList(kind) || this.draggedIndex < 0) {
+      this.clearDragState();
+      return;
+    }
+
+    const fromIndex = this.draggedIndex;
+    const currentItems = this.getSortableItems(kind);
+    const reorderedItems = this.moveItem(currentItems, fromIndex, insertIndex);
+
+    if (reorderedItems === currentItems) {
+      this.clearDragState();
+      return;
+    }
+
+    const normalizedItems = reorderedItems.map((item, index) => ({
+      ...item,
+      ordenVisual: index + 1
+    }));
+    const changedItems = normalizedItems.filter((item) => {
+      const previous = currentItems.find((currentItem) => currentItem.id === item.id);
+      return previous?.ordenVisual !== item.ordenVisual;
+    });
+
+    this.setSortableItems(kind, normalizedItems);
+    this.clearDragState();
+    this.playSettleAnimation(kind);
+
+    try {
+      if (kind === 'categorias') {
+        await Promise.all(changedItems.map((categoria) =>
+          firstValueFrom(this.api.updateCategoria(categoria.id, { ordenVisual: categoria.ordenVisual }))
+        ));
+        this.statusMessage.set('Orden de categorias actualizado.');
+      } else {
+        await Promise.all(changedItems.map((marca) =>
+          firstValueFrom(this.api.updateMarca(marca.id, { ordenVisual: marca.ordenVisual }))
+        ));
+        this.statusMessage.set('Orden de marcas actualizado.');
+      }
+    } catch (error) {
+      console.error(error);
+      this.errorMessage.set(kind === 'categorias'
+        ? 'No se pudo guardar el orden de categorias.'
+        : 'No se pudo guardar el orden de marcas.');
+
+      if (kind === 'categorias') {
+        await this.cargarCategorias();
+      } else {
+        await this.cargarMarcas();
+      }
+    }
+  }
+
+  private moveItem<T extends { ordenVisual: number }>(items: T[], fromIndex: number, insertIndex: number): T[] {
+    const boundedInsertIndex = Math.max(0, Math.min(insertIndex, items.length));
+    const finalIndex = fromIndex < boundedInsertIndex ? boundedInsertIndex - 1 : boundedInsertIndex;
+
+    if (finalIndex === fromIndex || fromIndex < 0 || fromIndex >= items.length) {
+      return items;
+    }
+
+    const copy = [...items];
+    const [movedItem] = copy.splice(fromIndex, 1);
+    copy.splice(finalIndex, 0, movedItem);
+    return copy;
+  }
+
+  private getItemDropIndex(index: number, event: DragEvent): number {
+    const target = event.currentTarget as HTMLElement;
+    const bounds = target.getBoundingClientRect();
+    return event.clientY > bounds.top + bounds.height / 2 ? index + 1 : index;
+  }
+
+  private canDropOnList(kind: SortableList): boolean {
+    return this.draggedList === kind && this.draggedIndex >= 0;
+  }
+
+  private getSortableItems(kind: SortableList): Array<Categoria | Marca> {
+    return kind === 'categorias' ? this.categorias : this.marcas;
+  }
+
+  private setSortableItems(kind: SortableList, items: Array<Categoria | Marca>): void {
+    if (kind === 'categorias') {
+      this.categorias = items as Categoria[];
+      return;
+    }
+
+    this.marcas = items as Marca[];
+  }
+
+  private isEditingSortableItem(kind: SortableList, index: number): boolean {
+    const item = this.getSortableItems(kind)[index];
+    if (!item) {
+      return true;
+    }
+
+    return kind === 'categorias'
+      ? this.editCategoriaId === item.id
+      : this.editMarcaId === item.id;
+  }
+
+  private clearDragState(): void {
+    this.draggedList = null;
+    this.draggedIndex = -1;
+    this.dropIndex = -1;
+  }
+
+  private playSettleAnimation(kind: SortableList): void {
+    this.settlingList.set(kind);
+    window.setTimeout(() => {
+      if (this.settlingList() === kind) {
+        this.settlingList.set(null);
+      }
+    }, 260);
+  }
+
+  private nextOrdenVisual(items: Array<{ ordenVisual: number }>): number {
+    return items.reduce((max, item) => Math.max(max, item.ordenVisual ?? 0), 0) + 1;
   }
 
   private resetNewProductoForm(): void {
