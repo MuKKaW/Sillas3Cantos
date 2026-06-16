@@ -3,13 +3,7 @@ import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { BackendApiService } from '../../core/services/backend-api.service';
-import { Categoria, ConfiguracionCatalogo, Marca, Producto } from '../../core/models/api.models';
-
-interface LandingService {
-  icon: string;
-  title: string;
-  text: string;
-}
+import { Categoria, ConfiguracionCatalogo, Marca, Producto, Solucion } from '../../core/models/api.models';
 
 interface FiltroTab {
   id: number;
@@ -26,51 +20,9 @@ export class PublicCatalog implements OnInit, OnDestroy {
   private readonly api = inject(BackendApiService);
   private readonly document = inject(DOCUMENT);
 
-  readonly services: LandingService[] = [
-    {
-      icon: '♿',
-      title: 'Sillas de ruedas',
-      text: 'Venta y alquiler para movilidad diaria o temporal.'
-    },
-    {
-      icon: '▭',
-      title: 'Camas articuladas',
-      text: 'Descanso cómodo con soluciones geriátricas.'
-    },
-    {
-      icon: '⚡',
-      title: 'Scooters eléctricos',
-      text: 'Autonomía sencilla para moverse cada día.'
-    },
-    {
-      icon: '↗',
-      title: 'Andadores',
-      text: 'Apoyo estable, ligero y fácil de manejar.'
-    },
-    {
-      icon: '⌁',
-      title: 'Grúas de traslado',
-      text: 'Ayuda segura para movilización en casa.'
-    },
-    {
-      icon: '+',
-      title: 'Ortesis',
-      text: 'Soportes técnicos para articulaciones y cuidado.'
-    },
-    {
-      icon: '□',
-      title: 'Ayudas de baño',
-      text: 'Seguridad y autonomía para el aseo diario.'
-    },
-    {
-      icon: '✓',
-      title: 'Plantillas y calzado',
-      text: 'Adaptación y comodidad para pies delicados.'
-    }
-  ];
-
   categorias: Categoria[] = [];
   marcas: Marca[] = [];
+  soluciones: Solucion[] = [];
   productos: Producto[] = [];
   productosReferencia: Producto[] = [];
   selectedProducto: Producto | null = null;
@@ -78,6 +30,10 @@ export class PublicCatalog implements OnInit, OnDestroy {
   usarFiltroTabs = false;
   mostrarPrecios = false;
   mostrarStock = false;
+  mostrarSeccionCatalogo = true;
+  mostrarSeccionSoluciones = true;
+  mostrarSeccionMapa = true;
+  mostrarSeccionConocenos = true;
   filtroNombre = '';
   filtroCategoriaId = 0;
   filtroMarcaId = 0;
@@ -105,20 +61,30 @@ export class PublicCatalog implements OnInit, OnDestroy {
         usarFiltroTabs: false,
         mostrarPrecios: false,
         mostrarStock: false,
+        mostrarSeccionCatalogo: true,
+        mostrarSeccionSoluciones: true,
+        mostrarSeccionMapa: true,
+        mostrarSeccionConocenos: true,
         fechaActualizacion: ''
       };
-      const [configuracion, categorias, marcas, productos] = await Promise.all([
+      const [configuracion, categorias, marcas, soluciones, productos] = await Promise.all([
         firstValueFrom(this.api.getConfiguracionCatalogo()).catch(() => configuracionPorDefecto),
         firstValueFrom(this.api.getCategorias({ includeHidden: false, orderAsc: true })),
         firstValueFrom(this.api.getMarcas({ includeHidden: false, orderAsc: true })),
+        firstValueFrom(this.api.getSoluciones({ orderAsc: true })).catch(() => []),
         firstValueFrom(this.api.getProductos({ includeHidden: false, orderAsc: this.orderAsc }))
       ]);
 
       this.usarFiltroTabs = configuracion.usarFiltroTabs;
       this.mostrarPrecios = configuracion.mostrarPrecios;
       this.mostrarStock = configuracion.mostrarStock;
+      this.mostrarSeccionCatalogo = configuracion.mostrarSeccionCatalogo ?? true;
+      this.mostrarSeccionSoluciones = configuracion.mostrarSeccionSoluciones ?? true;
+      this.mostrarSeccionMapa = configuracion.mostrarSeccionMapa ?? true;
+      this.mostrarSeccionConocenos = configuracion.mostrarSeccionConocenos ?? true;
       this.categorias = categorias;
       this.marcas = marcas;
+      this.soluciones = soluciones;
       this.productos = productos;
       this.productosReferencia = productos;
     } catch (error) {

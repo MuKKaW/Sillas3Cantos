@@ -11,10 +11,12 @@ namespace SillasTresCantos.Api.Controllers;
 public class ProductosController : ControllerBase
 {
     private readonly IProductoService _productoService;
+    private readonly IPermisosCatalogoService _permisosCatalogoService;
 
-    public ProductosController(IProductoService productoService)
+    public ProductosController(IProductoService productoService, IPermisosCatalogoService permisosCatalogoService)
     {
         _productoService = productoService;
+        _permisosCatalogoService = permisosCatalogoService;
     }
 
     [HttpGet]
@@ -119,6 +121,11 @@ public class ProductosController : ControllerBase
         [FromForm] PostProductoDTO producto,
         CancellationToken cancellationToken = default)
     {
+        if (!await _permisosCatalogoService.PuedeGestionarAsync(User, CatalogoPermisoEntidad.Producto, CatalogoPermisoAccion.Crear, cancellationToken))
+        {
+            return Forbid();
+        }
+
         if (!TryGetUsuarioAutenticadoId(out int usuarioId))
         {
             return Unauthorized("No se pudo identificar al usuario autenticado. Vuelve a iniciar sesion.");
@@ -170,6 +177,11 @@ public class ProductosController : ControllerBase
         PutProductoDTO producto,
         CancellationToken cancellationToken)
     {
+        if (!await _permisosCatalogoService.PuedeGestionarAsync(User, CatalogoPermisoEntidad.Producto, CatalogoPermisoAccion.Modificar, cancellationToken))
+        {
+            return Forbid();
+        }
+
         producto.Id = id;
         ProductoOperationResult resultado = await _productoService.PutProductoAsync(producto, cancellationToken);
 
@@ -190,6 +202,11 @@ public class ProductosController : ControllerBase
     [Authorize]
     public async Task<IActionResult> DeleteProducto(int id)
     {
+        if (!await _permisosCatalogoService.PuedeGestionarAsync(User, CatalogoPermisoEntidad.Producto, CatalogoPermisoAccion.Eliminar, HttpContext.RequestAborted))
+        {
+            return Forbid();
+        }
+
         ProductoOperationResult resultado = await _productoService.DeleteProductoAsync(id);
 
         return resultado.Error switch

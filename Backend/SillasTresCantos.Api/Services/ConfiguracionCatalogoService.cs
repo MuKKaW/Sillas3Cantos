@@ -26,6 +26,10 @@ public class ConfiguracionCatalogoService : IConfiguracionCatalogoService
             UsarFiltroTabs = configuracion.UsarFiltroTabs,
             MostrarPrecios = configuracion.MostrarPrecios,
             MostrarStock = configuracion.MostrarStock,
+            MostrarSeccionCatalogo = configuracion.MostrarSeccionCatalogo,
+            MostrarSeccionSoluciones = configuracion.MostrarSeccionSoluciones,
+            MostrarSeccionMapa = configuracion.MostrarSeccionMapa,
+            MostrarSeccionConocenos = configuracion.MostrarSeccionConocenos,
             FechaActualizacion = DateTime.UtcNow
         });
 
@@ -38,6 +42,10 @@ public class ConfiguracionCatalogoService : IConfiguracionCatalogoService
             UsarFiltroTabs = configuracion.UsarFiltroTabs,
             MostrarPrecios = configuracion.MostrarPrecios,
             MostrarStock = configuracion.MostrarStock,
+            MostrarSeccionCatalogo = configuracion.MostrarSeccionCatalogo,
+            MostrarSeccionSoluciones = configuracion.MostrarSeccionSoluciones,
+            MostrarSeccionMapa = configuracion.MostrarSeccionMapa,
+            MostrarSeccionConocenos = configuracion.MostrarSeccionConocenos,
             FechaActualizacion = configuracion.FechaActualizacion
         };
 }

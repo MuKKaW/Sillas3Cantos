@@ -4,7 +4,7 @@
       <p class="eyebrow">Portal empleados</p>
       <h1>Gestión interna del catálogo</h1>
       <p class="muted">
-        Productos, categorías, marcas, documentación y cuentas autorizadas.
+        Productos, categorías, marcas, soluciones, documentación y cuentas autorizadas.
       </p>
     </div>
     <div class="header-actions">
@@ -22,6 +22,9 @@
     </button>
     <button type="button" class="tab-btn" [class.active]="activeTab() === 'marcas'" (click)="setTab('marcas')">
       Marcas
+    </button>
+    <button type="button" class="tab-btn" [class.active]="activeTab() === 'soluciones'" (click)="setTab('soluciones')">
+      Soluciones
     </button>
     <button
       type="button"
@@ -130,19 +133,19 @@
     </div>
     <div class="field-grid">
       <div class="field">
-        <label>Nombre</label>
+        <label>Nombre <span class="required-mark">Obligatorio</span></label>
         <input [(ngModel)]="newProducto.nombre" />
       </div>
       <div class="field">
-        <label>Precio</label>
+        <label>Precio <span class="required-mark">Obligatorio</span></label>
         <input type="number" min="0" step="0.01" [(ngModel)]="newProducto.precio" />
       </div>
       <div class="field">
-        <label>Stock</label>
+        <label>Stock <span class="required-mark">Obligatorio</span></label>
         <input type="number" min="0" [(ngModel)]="newProducto.stock" />
       </div>
       <div class="field">
-        <label>Categoria</label>
+        <label>Categoria <span class="required-mark">Obligatorio</span></label>
         <select [(ngModel)]="newProducto.categoriaId">
           <option [ngValue]="0">Selecciona</option>
           @for (categoria of categorias; track categoria.id) {
@@ -151,7 +154,7 @@
         </select>
       </div>
       <div class="field">
-        <label>Marca</label>
+        <label>Marca <span class="required-mark">Obligatorio</span></label>
         <select [(ngModel)]="newProducto.marcaId">
           <option [ngValue]="0">Selecciona</option>
           @for (marca of marcas; track marca.id) {
@@ -159,12 +162,17 @@
           }
         </select>
       </div>
-      <div class="field">
-        <label>Visible</label>
-        <select [(ngModel)]="newProducto.esVisible">
-          <option [ngValue]="true">Si</option>
-          <option [ngValue]="false">No</option>
-        </select>
+      <div class="field toggle-field">
+        <label class="admin-toggle form-toggle">
+          <input type="checkbox" [(ngModel)]="newProducto.esVisible" />
+          <span class="toggle-track" aria-hidden="true">
+            <span class="toggle-thumb"></span>
+          </span>
+          <span class="toggle-copy">
+            <strong>Visible</strong>
+            <small>{{ newProducto.esVisible ? 'Visible en catálogo' : 'Oculto en catálogo' }}</small>
+          </span>
+        </label>
       </div>
       <div class="field image-field">
         <label>Imagen</label>
@@ -184,7 +192,7 @@
       <textarea [(ngModel)]="newProducto.descripcion"></textarea>
     </div>
     <div class="actions">
-      <button type="button" class="btn alt" (click)="crearProducto()">Crear producto</button>
+      <button type="button" class="btn alt" [disabled]="!canCrearProducto()" (click)="crearProducto()">Crear producto</button>
     </div>
   </section>
 
@@ -260,8 +268,8 @@
                           {{ producto.esVisible ? 'Si' : 'No' }}
                         </td>
                         <td class="actions-cell">
-                          <button type="button" class="btn ghost" (click)="empezarEdicionProducto(producto)">Editar</button>
-                          <button type="button" class="btn danger" (click)="eliminarProducto(producto.id)">Borrar</button>
+                          <button type="button" class="btn ghost" [disabled]="!canModificarProductos()" (click)="empezarEdicionProducto(producto)">Editar</button>
+                          <button type="button" class="btn danger" [disabled]="!canEliminarProductos()" (click)="eliminarProducto(producto.id)">Borrar</button>
                         </td>
                       </tr>
                     }
@@ -319,19 +327,19 @@
           <section class="edit-product-form">
             <div class="field-grid">
               <div class="field">
-                <label>Nombre</label>
+                <label>Nombre <span class="required-mark">Obligatorio</span></label>
                 <input [(ngModel)]="editProducto.nombre" />
               </div>
               <div class="field">
-                <label>Precio</label>
+                <label>Precio <span class="required-mark">Obligatorio</span></label>
                 <input type="number" min="0" step="0.01" [(ngModel)]="editProducto.precio" />
               </div>
               <div class="field">
-                <label>Stock</label>
+                <label>Stock <span class="required-mark">Obligatorio</span></label>
                 <input type="number" min="0" [(ngModel)]="editProducto.stock" />
               </div>
               <div class="field">
-                <label>Categoria</label>
+                <label>Categoria <span class="required-mark">Obligatorio</span></label>
                 <select [(ngModel)]="editProducto.categoriaId">
                   @for (categoria of categorias; track categoria.id) {
                     <option [ngValue]="categoria.id">{{ categoria.nombre }}</option>
@@ -339,19 +347,24 @@
                 </select>
               </div>
               <div class="field">
-                <label>Marca</label>
+                <label>Marca <span class="required-mark">Obligatorio</span></label>
                 <select [(ngModel)]="editProducto.marcaId">
                   @for (marca of marcas; track marca.id) {
                     <option [ngValue]="marca.id">{{ marca.nombre }}</option>
                   }
                 </select>
               </div>
-              <div class="field">
-                <label>Visible</label>
-                <select [(ngModel)]="editProducto.esVisible">
-                  <option [ngValue]="true">Si</option>
-                  <option [ngValue]="false">No</option>
-                </select>
+              <div class="field toggle-field">
+                <label class="admin-toggle form-toggle">
+                  <input type="checkbox" [(ngModel)]="editProducto.esVisible" />
+                  <span class="toggle-track" aria-hidden="true">
+                    <span class="toggle-thumb"></span>
+                  </span>
+                  <span class="toggle-copy">
+                    <strong>Visible</strong>
+                    <small>{{ editProducto.esVisible ? 'Visible en catálogo' : 'Oculto en catálogo' }}</small>
+                  </span>
+                </label>
               </div>
             </div>
 
@@ -429,22 +442,29 @@
     </div>
     <div class="field-grid">
       <div class="field">
-        <label>Nombre</label>
+        <label>Nombre <span class="required-mark">Obligatorio</span></label>
         <input [(ngModel)]="newCategoria.nombre" />
       </div>
-      <div class="field">
-        <label>Visible</label>
-        <select [(ngModel)]="newCategoria.esVisible">
-          <option [ngValue]="true">Si</option>
-          <option [ngValue]="false">No</option>
-        </select>
+      <div class="field toggle-field">
+        <label class="admin-toggle form-toggle">
+          <input type="checkbox" [(ngModel)]="newCategoria.esVisible" />
+          <span class="toggle-track" aria-hidden="true">
+            <span class="toggle-thumb"></span>
+          </span>
+          <span class="toggle-copy">
+            <strong>Visible</strong>
+            <small>{{ newCategoria.esVisible ? 'Visible en catálogo' : 'Oculta en catálogo' }}</small>
+          </span>
+        </label>
       </div>
     </div>
     <div class="field">
       <label>Descripcion</label>
       <textarea [(ngModel)]="newCategoria.descripcion"></textarea>
     </div>
-    <button type="button" class="btn alt" (click)="crearCategoria()">Crear categoria</button>
+    <div class="actions create-actions">
+      <button type="button" class="btn alt" [disabled]="!canCrearCategoria()" (click)="crearCategoria()">Crear categoria</button>
+    </div>
   </section>
 
   <section class="panel sortable-panel">
@@ -468,7 +488,7 @@
             [class.dragging]="isDraggingItem('categorias', index)"
             [class.drop-before]="isDropBefore('categorias', index)"
             [class.drop-after]="isDropAfter('categorias', index)"
-            [draggable]="editCategoriaId !== categoria.id"
+            [draggable]="canModificarCategorias() && editCategoriaId !== categoria.id"
             (dragstart)="onReorderDragStart('categorias', index, $event)"
             (dragover)="onReorderItemDragOver('categorias', index, $event)"
             (drop)="onReorderItemDrop('categorias', index, $event)"
@@ -491,8 +511,8 @@
             </div>
 
             <div class="sortable-actions">
-              <button type="button" class="btn ghost" (click)="empezarEdicionCategoria(categoria)">Editar</button>
-              <button type="button" class="btn danger" (click)="eliminarCategoria(categoria.id)">Borrar</button>
+              <button type="button" class="btn ghost" [disabled]="!canModificarCategorias()" (click)="empezarEdicionCategoria(categoria)">Editar</button>
+              <button type="button" class="btn danger" [disabled]="!canEliminarCategorias()" (click)="eliminarCategoria(categoria.id)">Borrar</button>
             </div>
           </article>
         }
@@ -523,15 +543,20 @@
         <section class="catalog-edit-form">
           <div class="field-grid">
             <div class="field">
-              <label>Nombre</label>
+              <label>Nombre <span class="required-mark">Obligatorio</span></label>
               <input [(ngModel)]="editCategoria.nombre" />
             </div>
-            <div class="field">
-              <label>Visible</label>
-              <select [(ngModel)]="editCategoria.esVisible">
-                <option [ngValue]="true">Si</option>
-                <option [ngValue]="false">No</option>
-              </select>
+            <div class="field toggle-field">
+              <label class="admin-toggle form-toggle">
+                <input type="checkbox" [(ngModel)]="editCategoria.esVisible" />
+                <span class="toggle-track" aria-hidden="true">
+                  <span class="toggle-thumb"></span>
+                </span>
+                <span class="toggle-copy">
+                  <strong>Visible</strong>
+                  <small>{{ editCategoria.esVisible ? 'Visible en catálogo' : 'Oculta en catálogo' }}</small>
+                </span>
+              </label>
             </div>
           </div>
 
@@ -559,7 +584,7 @@
 
     <div class="field-grid">
       <div class="field">
-        <label>Nombre</label>
+        <label>Nombre <span class="required-mark">Obligatorio</span></label>
         <input [(ngModel)]="newMarca.nombre" />
       </div>
       <div class="field">
@@ -570,12 +595,17 @@
         <label>Año fundación</label>
         <input type="number" [(ngModel)]="newMarca.anioFundacion" />
       </div>
-      <div class="field">
-        <label>Visible</label>
-        <select [(ngModel)]="newMarca.esVisible">
-          <option [ngValue]="true">Si</option>
-          <option [ngValue]="false">No</option>
-        </select>
+      <div class="field toggle-field">
+        <label class="admin-toggle form-toggle">
+          <input type="checkbox" [(ngModel)]="newMarca.esVisible" />
+          <span class="toggle-track" aria-hidden="true">
+            <span class="toggle-thumb"></span>
+          </span>
+          <span class="toggle-copy">
+            <strong>Visible</strong>
+            <small>{{ newMarca.esVisible ? 'Visible en catálogo' : 'Oculta en catálogo' }}</small>
+          </span>
+        </label>
       </div>
     </div>
 
@@ -583,7 +613,9 @@
       <label>Descripcion</label>
       <textarea [(ngModel)]="newMarca.descripcion"></textarea>
     </div>
-    <button type="button" class="btn alt" (click)="crearMarca()">Crear marca</button>
+    <div class="actions create-actions">
+      <button type="button" class="btn alt" [disabled]="!canCrearMarca()" (click)="crearMarca()">Crear marca</button>
+    </div>
   </section>
 
   <section class="panel sortable-panel">
@@ -607,7 +639,7 @@
             [class.dragging]="isDraggingItem('marcas', index)"
             [class.drop-before]="isDropBefore('marcas', index)"
             [class.drop-after]="isDropAfter('marcas', index)"
-            [draggable]="editMarcaId !== marca.id"
+            [draggable]="canModificarMarcas() && editMarcaId !== marca.id"
             (dragstart)="onReorderDragStart('marcas', index, $event)"
             (dragover)="onReorderItemDragOver('marcas', index, $event)"
             (drop)="onReorderItemDrop('marcas', index, $event)"
@@ -637,8 +669,8 @@
             </div>
 
             <div class="sortable-actions">
-              <button type="button" class="btn ghost" (click)="empezarEdicionMarca(marca)">Editar</button>
-              <button type="button" class="btn danger" (click)="eliminarMarca(marca.id)">Borrar</button>
+              <button type="button" class="btn ghost" [disabled]="!canModificarMarcas()" (click)="empezarEdicionMarca(marca)">Editar</button>
+              <button type="button" class="btn danger" [disabled]="!canEliminarMarcas()" (click)="eliminarMarca(marca.id)">Borrar</button>
             </div>
           </article>
         }
@@ -669,7 +701,7 @@
         <section class="catalog-edit-form">
           <div class="field-grid">
             <div class="field">
-              <label>Nombre</label>
+              <label>Nombre <span class="required-mark">Obligatorio</span></label>
               <input [(ngModel)]="editMarca.nombre" />
             </div>
             <div class="field">
@@ -680,12 +712,17 @@
               <label>Año fundación</label>
               <input type="number" [(ngModel)]="editMarca.anioFundacion" />
             </div>
-            <div class="field">
-              <label>Visible</label>
-              <select [(ngModel)]="editMarca.esVisible">
-                <option [ngValue]="true">Si</option>
-                <option [ngValue]="false">No</option>
-              </select>
+            <div class="field toggle-field">
+              <label class="admin-toggle form-toggle">
+                <input type="checkbox" [(ngModel)]="editMarca.esVisible" />
+                <span class="toggle-track" aria-hidden="true">
+                  <span class="toggle-thumb"></span>
+                </span>
+                <span class="toggle-copy">
+                  <strong>Visible</strong>
+                  <small>{{ editMarca.esVisible ? 'Visible en catálogo' : 'Oculta en catálogo' }}</small>
+                </span>
+              </label>
             </div>
           </div>
 
@@ -698,6 +735,134 @@
         <div class="modal-actions">
           <button type="button" class="btn" (click)="guardarEdicionMarca(editMarcaActual.id)">Guardar cambios</button>
           <button type="button" class="btn ghost" (click)="cancelarEdicionMarca()">Cancelar</button>
+        </div>
+      </article>
+    </section>
+  }
+}
+
+@if (activeTab() === 'soluciones') {
+  <section class="panel">
+    <div class="panel-title">
+      <h2>Soluciones</h2>
+      <button type="button" class="btn" (click)="cargarSoluciones()">Recargar</button>
+    </div>
+    <div class="field-grid">
+      <div class="field">
+        <label>Titulo <span class="required-mark">Obligatorio</span></label>
+        <input [(ngModel)]="newSolucion.titulo" />
+      </div>
+      <div class="field">
+        <label>Emoji <span class="required-mark">Obligatorio</span></label>
+        <input [(ngModel)]="newSolucion.emoji" />
+      </div>
+    </div>
+    <div class="field">
+      <label>Texto <span class="required-mark">Obligatorio</span></label>
+      <textarea [(ngModel)]="newSolucion.texto"></textarea>
+    </div>
+    <div class="actions create-actions">
+      <button type="button" class="btn alt" [disabled]="!canCrearSolucion()" (click)="crearSolucion()">Crear solucion</button>
+    </div>
+  </section>
+
+  <section class="panel sortable-panel">
+    <div class="panel-title">
+      <h3>Orden de soluciones</h3>
+      <span class="pill">{{ soluciones.length }} soluciones</span>
+    </div>
+
+    @if (soluciones.length === 0) {
+      <p class="muted">No hay soluciones creadas.</p>
+    } @else {
+      <div
+        class="sortable-list"
+        [class.settling]="settlingList() === 'soluciones'"
+        (dragover)="onReorderListDragOver('soluciones', $event)"
+        (drop)="onReorderListDrop('soluciones', $event)"
+      >
+        @for (solucion of soluciones; track solucion.id; let index = $index) {
+          <article
+            class="sortable-item"
+            [class.dragging]="isDraggingItem('soluciones', index)"
+            [class.drop-before]="isDropBefore('soluciones', index)"
+            [class.drop-after]="isDropAfter('soluciones', index)"
+            [draggable]="canModificarSoluciones() && editSolucionId !== solucion.id"
+            (dragstart)="onReorderDragStart('soluciones', index, $event)"
+            (dragover)="onReorderItemDragOver('soluciones', index, $event)"
+            (drop)="onReorderItemDrop('soluciones', index, $event)"
+            (dragend)="onReorderDragEnd()"
+          >
+            <button type="button" class="drag-handle" aria-label="Reordenar solucion">
+              <span aria-hidden="true">⋮⋮</span>
+            </button>
+            <span class="sort-position">{{ index + 1 }}</span>
+
+            <div class="sortable-main">
+              <div class="sortable-title-row">
+                <span class="solution-emoji" aria-hidden="true">{{ solucion.emoji }}</span>
+                <strong>{{ solucion.titulo }}</strong>
+              </div>
+
+              <div class="sortable-meta">
+                <span>ID {{ solucion.id }}</span>
+                <span>Orden {{ solucion.ordenVisual }}</span>
+              </div>
+
+              <p class="sortable-description">{{ solucion.texto }}</p>
+            </div>
+
+            <div class="sortable-actions">
+              <button type="button" class="btn ghost" [disabled]="!canModificarSoluciones()" (click)="empezarEdicionSolucion(solucion)">Editar</button>
+              <button type="button" class="btn danger" [disabled]="!canEliminarSoluciones()" (click)="eliminarSolucion(solucion.id)">Borrar</button>
+            </div>
+          </article>
+        }
+      </div>
+    }
+  </section>
+
+  @if (editSolucionActual) {
+    <section class="edit-modal-backdrop" role="presentation" (click)="cancelarEdicionSolucion()">
+      <article
+        class="edit-product-modal catalog-edit-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="editSolutionModalTitle"
+        (click)="$event.stopPropagation()"
+      >
+        <button type="button" class="modal-close" aria-label="Cerrar editor" (click)="cancelarEdicionSolucion()">×</button>
+
+        <div class="edit-modal-heading">
+          <div>
+            <p class="eyebrow">Solucion {{ editSolucionActual.id }}</p>
+            <h2 id="editSolutionModalTitle">Editar solucion</h2>
+            <p class="muted">{{ editSolucionActual.titulo }}</p>
+          </div>
+          <span class="pill">Orden {{ editSolucionActual.ordenVisual }}</span>
+        </div>
+
+        <section class="catalog-edit-form">
+          <div class="field-grid">
+            <div class="field">
+              <label>Titulo <span class="required-mark">Obligatorio</span></label>
+              <input [(ngModel)]="editSolucion.titulo" />
+            </div>
+            <div class="field">
+              <label>Emoji <span class="required-mark">Obligatorio</span></label>
+              <input [(ngModel)]="editSolucion.emoji" />
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Texto <span class="required-mark">Obligatorio</span></label>
+            <textarea [(ngModel)]="editSolucion.texto"></textarea>
+          </div>
+        </section>
+
+        <div class="modal-actions">
+          <button type="button" class="btn" (click)="guardarEdicionSolucion(editSolucionActual.id)">Guardar cambios</button>
+          <button type="button" class="btn ghost" (click)="cancelarEdicionSolucion()">Cancelar</button>
         </div>
       </article>
     </section>
@@ -754,6 +919,52 @@
         </span>
       </label>
 
+      <h3 class="admin-settings-subtitle">Secciones de la landing</h3>
+
+      <label class="admin-toggle">
+        <input type="checkbox" [(ngModel)]="configuracionCatalogo.mostrarSeccionCatalogo" />
+        <span class="toggle-track" aria-hidden="true">
+          <span class="toggle-thumb"></span>
+        </span>
+        <span class="toggle-copy">
+          <strong>Mostrar catalogo</strong>
+          <small>{{ configuracionCatalogo.mostrarSeccionCatalogo ? 'Seccion visible' : 'Seccion oculta' }}</small>
+        </span>
+      </label>
+
+      <label class="admin-toggle">
+        <input type="checkbox" [(ngModel)]="configuracionCatalogo.mostrarSeccionSoluciones" />
+        <span class="toggle-track" aria-hidden="true">
+          <span class="toggle-thumb"></span>
+        </span>
+        <span class="toggle-copy">
+          <strong>Mostrar soluciones</strong>
+          <small>{{ configuracionCatalogo.mostrarSeccionSoluciones ? 'Seccion visible' : 'Seccion oculta' }}</small>
+        </span>
+      </label>
+
+      <label class="admin-toggle">
+        <input type="checkbox" [(ngModel)]="configuracionCatalogo.mostrarSeccionMapa" />
+        <span class="toggle-track" aria-hidden="true">
+          <span class="toggle-thumb"></span>
+        </span>
+        <span class="toggle-copy">
+          <strong>Mostrar mapa</strong>
+          <small>{{ configuracionCatalogo.mostrarSeccionMapa ? 'Seccion visible' : 'Seccion oculta' }}</small>
+        </span>
+      </label>
+
+      <label class="admin-toggle">
+        <input type="checkbox" [(ngModel)]="configuracionCatalogo.mostrarSeccionConocenos" />
+        <span class="toggle-track" aria-hidden="true">
+          <span class="toggle-thumb"></span>
+        </span>
+        <span class="toggle-copy">
+          <strong>Mostrar conocenos</strong>
+          <small>{{ configuracionCatalogo.mostrarSeccionConocenos ? 'Seccion visible' : 'Seccion oculta' }}</small>
+        </span>
+      </label>
+
       <div class="admin-setting-meta">
         <span>Ultima actualizacion</span>
         <strong>
@@ -773,6 +984,122 @@
       </button>
     </div>
   </section>
+
+  @if (canManageUsers()) {
+    <section class="panel admin-panel">
+      <div class="panel-title">
+        <div>
+          <p class="eyebrow">Permisos</p>
+          <h2>Rol User</h2>
+          <p class="muted">Permisos de gestion interna para productos, categorias, marcas y soluciones.</p>
+        </div>
+        <span class="pill">
+          {{ permisosUser.fechaActualizacion ? (permisosUser.fechaActualizacion | date:'short') : 'Por defecto' }}
+        </span>
+      </div>
+
+      <div class="permission-matrix">
+        <article class="permission-row">
+          <div>
+            <strong>Productos</strong>
+            <small>Alta, edicion y borrado de productos.</small>
+          </div>
+          <label class="admin-toggle form-toggle">
+            <input type="checkbox" [(ngModel)]="permisosUser.productos.crear" />
+            <span class="toggle-track" aria-hidden="true"><span class="toggle-thumb"></span></span>
+            <span class="toggle-copy"><strong>Crear</strong></span>
+          </label>
+          <label class="admin-toggle form-toggle">
+            <input type="checkbox" [(ngModel)]="permisosUser.productos.modificar" />
+            <span class="toggle-track" aria-hidden="true"><span class="toggle-thumb"></span></span>
+            <span class="toggle-copy"><strong>Modificar</strong></span>
+          </label>
+          <label class="admin-toggle form-toggle">
+            <input type="checkbox" [(ngModel)]="permisosUser.productos.eliminar" />
+            <span class="toggle-track" aria-hidden="true"><span class="toggle-thumb"></span></span>
+            <span class="toggle-copy"><strong>Eliminar</strong></span>
+          </label>
+        </article>
+
+        <article class="permission-row">
+          <div>
+            <strong>Categorias</strong>
+            <small>Alta, edicion, ordenacion y borrado de categorias.</small>
+          </div>
+          <label class="admin-toggle form-toggle">
+            <input type="checkbox" [(ngModel)]="permisosUser.categorias.crear" />
+            <span class="toggle-track" aria-hidden="true"><span class="toggle-thumb"></span></span>
+            <span class="toggle-copy"><strong>Crear</strong></span>
+          </label>
+          <label class="admin-toggle form-toggle">
+            <input type="checkbox" [(ngModel)]="permisosUser.categorias.modificar" />
+            <span class="toggle-track" aria-hidden="true"><span class="toggle-thumb"></span></span>
+            <span class="toggle-copy"><strong>Modificar</strong></span>
+          </label>
+          <label class="admin-toggle form-toggle">
+            <input type="checkbox" [(ngModel)]="permisosUser.categorias.eliminar" />
+            <span class="toggle-track" aria-hidden="true"><span class="toggle-thumb"></span></span>
+            <span class="toggle-copy"><strong>Eliminar</strong></span>
+          </label>
+        </article>
+
+        <article class="permission-row">
+          <div>
+            <strong>Marcas</strong>
+            <small>Alta, edicion, ordenacion y borrado de marcas.</small>
+          </div>
+          <label class="admin-toggle form-toggle">
+            <input type="checkbox" [(ngModel)]="permisosUser.marcas.crear" />
+            <span class="toggle-track" aria-hidden="true"><span class="toggle-thumb"></span></span>
+            <span class="toggle-copy"><strong>Crear</strong></span>
+          </label>
+          <label class="admin-toggle form-toggle">
+            <input type="checkbox" [(ngModel)]="permisosUser.marcas.modificar" />
+            <span class="toggle-track" aria-hidden="true"><span class="toggle-thumb"></span></span>
+            <span class="toggle-copy"><strong>Modificar</strong></span>
+          </label>
+          <label class="admin-toggle form-toggle">
+            <input type="checkbox" [(ngModel)]="permisosUser.marcas.eliminar" />
+            <span class="toggle-track" aria-hidden="true"><span class="toggle-thumb"></span></span>
+            <span class="toggle-copy"><strong>Eliminar</strong></span>
+          </label>
+        </article>
+
+        <article class="permission-row">
+          <div>
+            <strong>Soluciones</strong>
+            <small>Alta, edicion, ordenacion y borrado de soluciones.</small>
+          </div>
+          <label class="admin-toggle form-toggle">
+            <input type="checkbox" [(ngModel)]="permisosUser.soluciones.crear" />
+            <span class="toggle-track" aria-hidden="true"><span class="toggle-thumb"></span></span>
+            <span class="toggle-copy"><strong>Crear</strong></span>
+          </label>
+          <label class="admin-toggle form-toggle">
+            <input type="checkbox" [(ngModel)]="permisosUser.soluciones.modificar" />
+            <span class="toggle-track" aria-hidden="true"><span class="toggle-thumb"></span></span>
+            <span class="toggle-copy"><strong>Modificar</strong></span>
+          </label>
+          <label class="admin-toggle form-toggle">
+            <input type="checkbox" [(ngModel)]="permisosUser.soluciones.eliminar" />
+            <span class="toggle-track" aria-hidden="true"><span class="toggle-thumb"></span></span>
+            <span class="toggle-copy"><strong>Eliminar</strong></span>
+          </label>
+        </article>
+      </div>
+
+      <div class="actions">
+        <button
+          type="button"
+          class="btn"
+          [disabled]="guardandoPermisos()"
+          (click)="guardarPermisosUser()"
+        >
+          {{ guardandoPermisos() ? 'Guardando...' : 'Guardar permisos' }}
+        </button>
+      </div>
+    </section>
+  }
 }
 
 @if (activeTab() === 'usuarios') {

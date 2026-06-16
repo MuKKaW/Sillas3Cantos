@@ -10,10 +10,12 @@ namespace SillasTresCantos.Api.Controllers;
 public class CategoriasController : ControllerBase
 {
     private readonly ICategoriaService _categoriaService;
+    private readonly IPermisosCatalogoService _permisosCatalogoService;
 
-    public CategoriasController(ICategoriaService categoriaService)
+    public CategoriasController(ICategoriaService categoriaService, IPermisosCatalogoService permisosCatalogoService)
     {
         _categoriaService = categoriaService;
+        _permisosCatalogoService = permisosCatalogoService;
     }
 
     [HttpGet]
@@ -65,6 +67,11 @@ public class CategoriasController : ControllerBase
     [Authorize]
     public async Task<ActionResult<GetCategoriaDTO>> PostCategoria([FromBody] PostCategoriaDTO categoria)
     {
+        if (!await _permisosCatalogoService.PuedeGestionarAsync(User, CatalogoPermisoEntidad.Categoria, CatalogoPermisoAccion.Crear, HttpContext.RequestAborted))
+        {
+            return Forbid();
+        }
+
         CategoriaOperationResult resultado = await _categoriaService.PostCategoriaAsync(categoria);
         if (!resultado.IsSuccess)
         {
@@ -88,6 +95,11 @@ public class CategoriasController : ControllerBase
     [Authorize]
     public async Task<IActionResult> PutCategoria(int id, [FromBody] PutCategoriaDTO categoria)
     {
+        if (!await _permisosCatalogoService.PuedeGestionarAsync(User, CatalogoPermisoEntidad.Categoria, CatalogoPermisoAccion.Modificar, HttpContext.RequestAborted))
+        {
+            return Forbid();
+        }
+
         categoria.Id = id;
         CategoriaOperationResult resultado = await _categoriaService.PutCategoriaAsync(categoria);
 
@@ -105,6 +117,11 @@ public class CategoriasController : ControllerBase
     [Authorize]
     public async Task<IActionResult> DeleteCategoria(int id)
     {
+        if (!await _permisosCatalogoService.PuedeGestionarAsync(User, CatalogoPermisoEntidad.Categoria, CatalogoPermisoAccion.Eliminar, HttpContext.RequestAborted))
+        {
+            return Forbid();
+        }
+
         CategoriaOperationResult resultado = await _categoriaService.DeleteCategoriaAsync(id);
 
         return resultado.Error switch

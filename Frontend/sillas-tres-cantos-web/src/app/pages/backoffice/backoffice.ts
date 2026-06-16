@@ -9,21 +9,25 @@ import {
   Categoria,
   ConfiguracionCatalogo,
   Marca,
+  PermisosCatalogo,
   PostCategoria,
   PostMarca,
   PostProducto,
+  PostSolucion,
   PostUsuario,
   Producto,
   ProductoArchivo,
   PutCategoria,
   PutMarca,
   PutProducto,
+  PutSolucion,
   PutUsuario,
+  Solucion,
   Usuario
 } from '../../core/models/api.models';
 
-type BackofficeTab = 'productos' | 'categorias' | 'marcas' | 'administracion' | 'usuarios';
-type SortableList = 'categorias' | 'marcas';
+type BackofficeTab = 'productos' | 'categorias' | 'marcas' | 'soluciones' | 'administracion' | 'usuarios';
+type SortableList = 'categorias' | 'marcas' | 'soluciones';
 
 interface ProductosCategoriaGrupo {
   categoriaId: number;
@@ -54,6 +58,7 @@ export class Backoffice implements OnInit, OnDestroy {
   readonly uploading = signal(false);
   readonly savingProducto = signal(false);
   readonly guardandoConfiguracion = signal(false);
+  readonly guardandoPermisos = signal(false);
   readonly statusMessage = signal('');
   readonly errorMessage = signal('');
   readonly expandedCategoriaIds = signal<Set<number>>(new Set<number>());
@@ -62,14 +67,21 @@ export class Backoffice implements OnInit, OnDestroy {
 
   categorias: Categoria[] = [];
   marcas: Marca[] = [];
+  soluciones: Solucion[] = [];
   productos: Producto[] = [];
   usuarios: Usuario[] = [];
   configuracionCatalogo: ConfiguracionCatalogo = {
     usarFiltroTabs: false,
     mostrarPrecios: false,
     mostrarStock: false,
+    mostrarSeccionCatalogo: true,
+    mostrarSeccionSoluciones: true,
+    mostrarSeccionMapa: true,
+    mostrarSeccionConocenos: true,
     fechaActualizacion: ''
   };
+  permisosActuales: PermisosCatalogo = this.defaultPermisosCatalogo();
+  permisosUser: PermisosCatalogo = this.defaultPermisosCatalogo();
 
   filtroProductosNombre = '';
   filtroProductosCategoriaId = 0;
@@ -108,6 +120,13 @@ export class Backoffice implements OnInit, OnDestroy {
     esVisible: true
   };
 
+  newSolucion: PostSolucion = {
+    titulo: '',
+    texto: '',
+    emoji: '',
+    ordenVisual: 0
+  };
+
   newUsuario: PostUsuario = {
     username: '',
     password: '',
@@ -126,6 +145,9 @@ export class Backoffice implements OnInit, OnDestroy {
   editMarcaId: number | null = null;
   editMarcaActual: Marca | null = null;
   editMarca: PutMarca = {};
+  editSolucionId: number | null = null;
+  editSolucionActual: Solucion | null = null;
+  editSolucion: PutSolucion = {};
   editUsuarioId: number | null = null;
   editUsuario: PutUsuario = {};
 
@@ -155,18 +177,29 @@ export class Backoffice implements OnInit, OnDestroy {
         usarFiltroTabs: false,
         mostrarPrecios: false,
         mostrarStock: false,
+        mostrarSeccionCatalogo: true,
+        mostrarSeccionSoluciones: true,
+        mostrarSeccionMapa: true,
+        mostrarSeccionConocenos: true,
         fechaActualizacion: ''
       };
-      const [categorias, marcas, configuracionCatalogo] = await Promise.all([
+      const permisosPorDefecto = this.defaultPermisosCatalogo();
+      const [categorias, marcas, soluciones, configuracionCatalogo, permisosActuales] = await Promise.all([
         firstValueFrom(this.api.getCategorias({ includeHidden: true, orderAsc: true })),
         firstValueFrom(this.api.getMarcas({ includeHidden: true, orderAsc: true })),
-        firstValueFrom(this.api.getConfiguracionCatalogo()).catch(() => configuracionPorDefecto)
+        firstValueFrom(this.api.getSoluciones({ orderAsc: true })),
+        firstValueFrom(this.api.getConfiguracionCatalogo()).catch(() => configuracionPorDefecto),
+        firstValueFrom(this.api.getPermisosCatalogoActuales()).catch(() => permisosPorDefecto)
       ]);
       this.categorias = categorias;
       this.marcas = marcas;
-      this.configuracionCatalogo = configuracionCatalogo;
+      this.soluciones = soluciones;
+      this.configuracionCatalogo = { ...configuracionPorDefecto, ...configuracionCatalogo };
+      this.permisosActuales = this.normalizePermisosCatalogo(permisosActuales);
       await this.cargarProductos();
       if (this.canManageUsers()) {
+        const permisosUser = await firstValueFrom(this.api.getPermisosCatalogoUser()).catch(() => permisosPorDefecto);
+        this.permisosUser = this.normalizePermisosCatalogo(permisosUser);
         await this.cargarUsuarios();
       }
       this.statusMessage.set('Portal preparado.');
@@ -193,19 +226,48 @@ export class Backoffice implements OnInit, OnDestroy {
     this.errorMessage.set('');
 
     try {
-      this.configuracionCatalogo = await firstValueFrom(
-        this.api.updateConfiguracionCatalogo({
-          usarFiltroTabs: this.configuracionCatalogo.usarFiltroTabs,
-          mostrarPrecios: this.configuracionCatalogo.mostrarPrecios,
-          mostrarStock: this.configuracionCatalogo.mostrarStock
-        })
-      );
+      const payload = {
+        usarFiltroTabs: this.configuracionCatalogo.usarFiltroTabs,
+        mostrarPrecios: this.configuracionCatalogo.mostrarPrecios,
+        mostrarStock: this.configuracionCatalogo.mostrarStock,
+        mostrarSeccionCatalogo: this.configuracionCatalogo.mostrarSeccionCatalogo,
+        mostrarSeccionSoluciones: this.configuracionCatalogo.mostrarSeccionSoluciones,
+        mostrarSeccionMapa: this.configuracionCatalogo.mostrarSeccionMapa,
+        mostrarSeccionConocenos: this.configuracionCatalogo.mostrarSeccionConocenos
+      };
+      const configuracionActualizada = await firstValueFrom(this.api.updateConfiguracionCatalogo(payload));
+      this.configuracionCatalogo = {
+        ...this.configuracionCatalogo,
+        ...payload,
+        ...configuracionActualizada
+      };
       this.statusMessage.set('Configuracion de la landing actualizada.');
     } catch (error) {
       console.error(error);
       this.errorMessage.set('No se pudo guardar la configuracion de la landing.');
     } finally {
       this.guardandoConfiguracion.set(false);
+    }
+  }
+
+  async guardarPermisosUser(): Promise<void> {
+    if (!this.canManageUsers()) {
+      return;
+    }
+
+    this.guardandoPermisos.set(true);
+    this.errorMessage.set('');
+
+    try {
+      this.permisosUser = this.normalizePermisosCatalogo(
+        await firstValueFrom(this.api.updatePermisosCatalogoUser(this.permisosUser))
+      );
+      this.statusMessage.set('Permisos del rol User actualizados.');
+    } catch (error) {
+      console.error(error);
+      this.errorMessage.set('No se pudieron guardar los permisos del rol User.');
+    } finally {
+      this.guardandoPermisos.set(false);
     }
   }
 
@@ -220,6 +282,76 @@ export class Backoffice implements OnInit, OnDestroy {
     ].filter(Boolean);
 
     return visibles.length > 0 ? `Muestra ${visibles.join(' y ')}` : 'Precio y stock ocultos';
+  }
+
+  productoObligatoriosCompletos(): boolean {
+    return this.newProducto.nombre.trim().length > 0
+      && this.hasNonNegativeNumber(this.newProducto.precio)
+      && this.hasNonNegativeNumber(this.newProducto.stock)
+      && this.newProducto.categoriaId > 0
+      && this.newProducto.marcaId > 0;
+  }
+
+  categoriaObligatoriosCompletos(): boolean {
+    return this.newCategoria.nombre.trim().length > 0;
+  }
+
+  marcaObligatoriosCompletos(): boolean {
+    return this.newMarca.nombre.trim().length > 0;
+  }
+
+  solucionObligatoriosCompletos(): boolean {
+    return this.newSolucion.titulo.trim().length > 0
+      && this.newSolucion.texto.trim().length > 0
+      && this.newSolucion.emoji.trim().length > 0;
+  }
+
+  canCrearProducto(): boolean {
+    return this.permisosActuales.productos.crear && this.productoObligatoriosCompletos();
+  }
+
+  canCrearCategoria(): boolean {
+    return this.permisosActuales.categorias.crear && this.categoriaObligatoriosCompletos();
+  }
+
+  canCrearMarca(): boolean {
+    return this.permisosActuales.marcas.crear && this.marcaObligatoriosCompletos();
+  }
+
+  canCrearSolucion(): boolean {
+    return this.permisosActuales.soluciones.crear && this.solucionObligatoriosCompletos();
+  }
+
+  canModificarCategorias(): boolean {
+    return this.permisosActuales.categorias.modificar;
+  }
+
+  canEliminarCategorias(): boolean {
+    return this.permisosActuales.categorias.eliminar;
+  }
+
+  canModificarMarcas(): boolean {
+    return this.permisosActuales.marcas.modificar;
+  }
+
+  canEliminarMarcas(): boolean {
+    return this.permisosActuales.marcas.eliminar;
+  }
+
+  canModificarProductos(): boolean {
+    return this.permisosActuales.productos.modificar;
+  }
+
+  canEliminarProductos(): boolean {
+    return this.permisosActuales.productos.eliminar;
+  }
+
+  canModificarSoluciones(): boolean {
+    return this.permisosActuales.soluciones.modificar;
+  }
+
+  canEliminarSoluciones(): boolean {
+    return this.permisosActuales.soluciones.eliminar;
   }
 
   async logout(): Promise<void> {
@@ -277,6 +409,14 @@ export class Backoffice implements OnInit, OnDestroy {
   }
 
   async crearProducto(): Promise<void> {
+    if (!this.permisosActuales.productos.crear) {
+      this.errorMessage.set('No tienes permiso para crear productos.');
+      return;
+    }
+    if (!this.productoObligatoriosCompletos()) {
+      this.errorMessage.set('Completa los campos obligatorios antes de crear el producto.');
+      return;
+    }
     if (!this.newProducto.categoriaId || !this.newProducto.marcaId) {
       this.errorMessage.set('Debes seleccionar categoría y marca antes de crear el producto.');
       return;
@@ -333,6 +473,11 @@ export class Backoffice implements OnInit, OnDestroy {
   }
 
   async empezarEdicionProducto(producto: Producto): Promise<void> {
+    if (!this.canModificarProductos()) {
+      this.errorMessage.set('No tienes permiso para modificar productos.');
+      return;
+    }
+
     this.editProductoId = producto.id;
     this.editProductoActual = producto;
     this.editProducto = {
@@ -386,6 +531,11 @@ export class Backoffice implements OnInit, OnDestroy {
   }
 
   async eliminarProducto(productoId: number): Promise<void> {
+    if (!this.canEliminarProductos()) {
+      this.errorMessage.set('No tienes permiso para eliminar productos.');
+      return;
+    }
+
     if (!confirm('¿Eliminar producto?')) {
       return;
     }
@@ -415,6 +565,15 @@ export class Backoffice implements OnInit, OnDestroy {
   }
 
   async crearCategoria(): Promise<void> {
+    if (!this.permisosActuales.categorias.crear) {
+      this.errorMessage.set('No tienes permiso para crear categorias.');
+      return;
+    }
+    if (!this.categoriaObligatoriosCompletos()) {
+      this.errorMessage.set('Completa los campos obligatorios antes de crear la categoria.');
+      return;
+    }
+
     try {
       await firstValueFrom(
         this.api.createCategoria({
@@ -437,6 +596,11 @@ export class Backoffice implements OnInit, OnDestroy {
   }
 
   empezarEdicionCategoria(categoria: Categoria): void {
+    if (!this.canModificarCategorias()) {
+      this.errorMessage.set('No tienes permiso para modificar categorias.');
+      return;
+    }
+
     this.editCategoriaId = categoria.id;
     this.editCategoriaActual = categoria;
     this.editCategoria = {
@@ -468,6 +632,11 @@ export class Backoffice implements OnInit, OnDestroy {
   }
 
   async eliminarCategoria(categoriaId: number): Promise<void> {
+    if (!this.canEliminarCategorias()) {
+      this.errorMessage.set('No tienes permiso para eliminar categorias.');
+      return;
+    }
+
     if (!confirm('¿Eliminar categoria?')) {
       return;
     }
@@ -588,6 +757,15 @@ export class Backoffice implements OnInit, OnDestroy {
   }
 
   async crearMarca(): Promise<void> {
+    if (!this.permisosActuales.marcas.crear) {
+      this.errorMessage.set('No tienes permiso para crear marcas.');
+      return;
+    }
+    if (!this.marcaObligatoriosCompletos()) {
+      this.errorMessage.set('Completa los campos obligatorios antes de crear la marca.');
+      return;
+    }
+
     try {
       await firstValueFrom(
         this.api.createMarca({
@@ -612,6 +790,11 @@ export class Backoffice implements OnInit, OnDestroy {
   }
 
   empezarEdicionMarca(marca: Marca): void {
+    if (!this.canModificarMarcas()) {
+      this.errorMessage.set('No tienes permiso para modificar marcas.');
+      return;
+    }
+
     this.editMarcaId = marca.id;
     this.editMarcaActual = marca;
     this.editMarca = {
@@ -645,6 +828,11 @@ export class Backoffice implements OnInit, OnDestroy {
   }
 
   async eliminarMarca(marcaId: number): Promise<void> {
+    if (!this.canEliminarMarcas()) {
+      this.errorMessage.set('No tienes permiso para eliminar marcas.');
+      return;
+    }
+
     if (!confirm('¿Eliminar marca?')) {
       return;
     }
@@ -658,6 +846,106 @@ export class Backoffice implements OnInit, OnDestroy {
     } catch (error) {
       console.error(error);
       this.errorMessage.set('No se pudo eliminar la marca.');
+    }
+  }
+
+  async cargarSoluciones(): Promise<void> {
+    try {
+      this.soluciones = await firstValueFrom(
+        this.api.getSoluciones({ orderAsc: true })
+      );
+    } catch (error) {
+      console.error(error);
+      this.errorMessage.set('Error al cargar soluciones.');
+    }
+  }
+
+  async crearSolucion(): Promise<void> {
+    if (!this.permisosActuales.soluciones.crear) {
+      this.errorMessage.set('No tienes permiso para crear soluciones.');
+      return;
+    }
+    if (!this.solucionObligatoriosCompletos()) {
+      this.errorMessage.set('Completa los campos obligatorios antes de crear la solucion.');
+      return;
+    }
+
+    try {
+      await firstValueFrom(
+        this.api.createSolucion({
+          ...this.newSolucion,
+          ordenVisual: this.nextOrdenVisual(this.soluciones)
+        })
+      );
+      this.newSolucion = {
+        titulo: '',
+        texto: '',
+        emoji: '',
+        ordenVisual: 0
+      };
+      await this.cargarSoluciones();
+      this.statusMessage.set('Solucion creada.');
+    } catch (error) {
+      console.error(error);
+      this.errorMessage.set('No se pudo crear la solucion.');
+    }
+  }
+
+  empezarEdicionSolucion(solucion: Solucion): void {
+    if (!this.canModificarSoluciones()) {
+      this.errorMessage.set('No tienes permiso para modificar soluciones.');
+      return;
+    }
+
+    this.editSolucionId = solucion.id;
+    this.editSolucionActual = solucion;
+    this.editSolucion = {
+      titulo: solucion.titulo,
+      texto: solucion.texto,
+      emoji: solucion.emoji,
+      ordenVisual: solucion.ordenVisual
+    };
+    this.setBodyScrollLocked(true);
+  }
+
+  cancelarEdicionSolucion(): void {
+    this.editSolucionId = null;
+    this.editSolucionActual = null;
+    this.editSolucion = {};
+    this.setBodyScrollLocked(false);
+  }
+
+  async guardarEdicionSolucion(solucionId: number): Promise<void> {
+    try {
+      await firstValueFrom(this.api.updateSolucion(solucionId, this.editSolucion));
+      this.cancelarEdicionSolucion();
+      await this.cargarSoluciones();
+      this.statusMessage.set('Solucion actualizada.');
+    } catch (error) {
+      console.error(error);
+      this.errorMessage.set('No se pudo actualizar la solucion.');
+    }
+  }
+
+  async eliminarSolucion(solucionId: number): Promise<void> {
+    if (!this.canEliminarSoluciones()) {
+      this.errorMessage.set('No tienes permiso para eliminar soluciones.');
+      return;
+    }
+
+    if (!confirm('¿Eliminar solucion?')) {
+      return;
+    }
+    try {
+      await firstValueFrom(this.api.deleteSolucion(solucionId));
+      await this.cargarSoluciones();
+      if (this.editSolucionId === solucionId) {
+        this.cancelarEdicionSolucion();
+      }
+      this.statusMessage.set('Solucion eliminada.');
+    } catch (error) {
+      console.error(error);
+      this.errorMessage.set('No se pudo eliminar la solucion.');
     }
   }
 
@@ -919,22 +1207,32 @@ export class Backoffice implements OnInit, OnDestroy {
           firstValueFrom(this.api.updateCategoria(categoria.id, { ordenVisual: categoria.ordenVisual }))
         ));
         this.statusMessage.set('Orden de categorias actualizado.');
-      } else {
+      } else if (kind === 'marcas') {
         await Promise.all(changedItems.map((marca) =>
           firstValueFrom(this.api.updateMarca(marca.id, { ordenVisual: marca.ordenVisual }))
         ));
         this.statusMessage.set('Orden de marcas actualizado.');
+      } else {
+        await Promise.all(changedItems.map((solucion) =>
+          firstValueFrom(this.api.updateSolucion(solucion.id, { ordenVisual: solucion.ordenVisual }))
+        ));
+        this.statusMessage.set('Orden de soluciones actualizado.');
       }
     } catch (error) {
       console.error(error);
-      this.errorMessage.set(kind === 'categorias'
+      const errorMessage = kind === 'categorias'
         ? 'No se pudo guardar el orden de categorias.'
-        : 'No se pudo guardar el orden de marcas.');
+        : kind === 'marcas'
+          ? 'No se pudo guardar el orden de marcas.'
+          : 'No se pudo guardar el orden de soluciones.';
+      this.errorMessage.set(errorMessage);
 
       if (kind === 'categorias') {
         await this.cargarCategorias();
-      } else {
+      } else if (kind === 'marcas') {
         await this.cargarMarcas();
+      } else {
+        await this.cargarSoluciones();
       }
     }
   }
@@ -960,20 +1258,35 @@ export class Backoffice implements OnInit, OnDestroy {
   }
 
   private canDropOnList(kind: SortableList): boolean {
-    return this.draggedList === kind && this.draggedIndex >= 0;
+    const canModify = kind === 'categorias'
+      ? this.canModificarCategorias()
+      : kind === 'marcas'
+        ? this.canModificarMarcas()
+        : this.canModificarSoluciones();
+
+    return canModify && this.draggedList === kind && this.draggedIndex >= 0;
   }
 
-  private getSortableItems(kind: SortableList): Array<Categoria | Marca> {
-    return kind === 'categorias' ? this.categorias : this.marcas;
+  private getSortableItems(kind: SortableList): Array<Categoria | Marca | Solucion> {
+    if (kind === 'categorias') {
+      return this.categorias;
+    }
+
+    return kind === 'marcas' ? this.marcas : this.soluciones;
   }
 
-  private setSortableItems(kind: SortableList, items: Array<Categoria | Marca>): void {
+  private setSortableItems(kind: SortableList, items: Array<Categoria | Marca | Solucion>): void {
     if (kind === 'categorias') {
       this.categorias = items as Categoria[];
       return;
     }
 
-    this.marcas = items as Marca[];
+    if (kind === 'marcas') {
+      this.marcas = items as Marca[];
+      return;
+    }
+
+    this.soluciones = items as Solucion[];
   }
 
   private isEditingSortableItem(kind: SortableList, index: number): boolean {
@@ -982,9 +1295,13 @@ export class Backoffice implements OnInit, OnDestroy {
       return true;
     }
 
-    return kind === 'categorias'
-      ? this.editCategoriaId === item.id
-      : this.editMarcaId === item.id;
+    if (kind === 'categorias') {
+      return this.editCategoriaId === item.id;
+    }
+
+    return kind === 'marcas'
+      ? this.editMarcaId === item.id
+      : this.editSolucionId === item.id;
   }
 
   private clearDragState(): void {
@@ -1004,6 +1321,65 @@ export class Backoffice implements OnInit, OnDestroy {
 
   private nextOrdenVisual(items: Array<{ ordenVisual: number }>): number {
     return items.reduce((max, item) => Math.max(max, item.ordenVisual ?? 0), 0) + 1;
+  }
+
+  private hasNonNegativeNumber(value: unknown): boolean {
+    if (value === null || value === undefined || String(value).trim() === '') {
+      return false;
+    }
+
+    const parsed = Number(value);
+    return Number.isFinite(parsed) && parsed >= 0;
+  }
+
+  private defaultPermisosCatalogo(): PermisosCatalogo {
+    return {
+      productos: {
+        crear: true,
+        modificar: true,
+        eliminar: true
+      },
+      categorias: {
+        crear: true,
+        modificar: true,
+        eliminar: true
+      },
+      marcas: {
+        crear: true,
+        modificar: true,
+        eliminar: true
+      },
+      soluciones: {
+        crear: true,
+        modificar: true,
+        eliminar: true
+      },
+      fechaActualizacion: ''
+    };
+  }
+
+  private normalizePermisosCatalogo(permisos: PermisosCatalogo): PermisosCatalogo {
+    const permisosPorDefecto = this.defaultPermisosCatalogo();
+
+    return {
+      productos: {
+        ...permisosPorDefecto.productos,
+        ...permisos.productos
+      },
+      categorias: {
+        ...permisosPorDefecto.categorias,
+        ...permisos.categorias
+      },
+      marcas: {
+        ...permisosPorDefecto.marcas,
+        ...permisos.marcas
+      },
+      soluciones: {
+        ...permisosPorDefecto.soluciones,
+        ...permisos.soluciones
+      },
+      fechaActualizacion: permisos.fechaActualizacion ?? permisosPorDefecto.fechaActualizacion
+    };
   }
 
   private resetNewProductoForm(): void {

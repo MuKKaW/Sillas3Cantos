@@ -10,10 +10,12 @@ namespace SillasTresCantos.Api.Controllers;
 public class MarcasController : ControllerBase
 {
     private readonly IMarcaService _marcaService;
+    private readonly IPermisosCatalogoService _permisosCatalogoService;
 
-    public MarcasController(IMarcaService marcaService)
+    public MarcasController(IMarcaService marcaService, IPermisosCatalogoService permisosCatalogoService)
     {
         _marcaService = marcaService;
+        _permisosCatalogoService = permisosCatalogoService;
     }
 
     [HttpGet]
@@ -65,6 +67,11 @@ public class MarcasController : ControllerBase
     [Authorize]
     public async Task<ActionResult<GetMarcaDTO>> PostMarca([FromBody] PostMarcaDTO marca)
     {
+        if (!await _permisosCatalogoService.PuedeGestionarAsync(User, CatalogoPermisoEntidad.Marca, CatalogoPermisoAccion.Crear, HttpContext.RequestAborted))
+        {
+            return Forbid();
+        }
+
         MarcaOperationResult resultado = await _marcaService.PostMarcaAsync(marca);
         if (!resultado.IsSuccess)
         {
@@ -88,6 +95,11 @@ public class MarcasController : ControllerBase
     [Authorize]
     public async Task<IActionResult> PutMarca(int id, [FromBody] PutMarcaDTO marca)
     {
+        if (!await _permisosCatalogoService.PuedeGestionarAsync(User, CatalogoPermisoEntidad.Marca, CatalogoPermisoAccion.Modificar, HttpContext.RequestAborted))
+        {
+            return Forbid();
+        }
+
         marca.Id = id;
         MarcaOperationResult resultado = await _marcaService.PutMarcaAsync(marca);
 
@@ -105,6 +117,11 @@ public class MarcasController : ControllerBase
     [Authorize]
     public async Task<IActionResult> DeleteMarca(int id)
     {
+        if (!await _permisosCatalogoService.PuedeGestionarAsync(User, CatalogoPermisoEntidad.Marca, CatalogoPermisoAccion.Eliminar, HttpContext.RequestAborted))
+        {
+            return Forbid();
+        }
+
         MarcaOperationResult resultado = await _marcaService.DeleteMarcaAsync(id);
 
         return resultado.Error switch

@@ -21,7 +21,14 @@ public class MySqlConfiguracionCatalogoRepository : IConfiguracionCatalogoReposi
         await using MySqlCommand command = connection.CreateCommand();
 
         command.CommandText = """
-                              SELECT usar_filtro_tabs, mostrar_precios, mostrar_stock, fecha_actualizacion
+                              SELECT usar_filtro_tabs,
+                                     mostrar_precios,
+                                     mostrar_stock,
+                                     mostrar_seccion_catalogo,
+                                     mostrar_seccion_soluciones,
+                                     mostrar_seccion_mapa,
+                                     mostrar_seccion_conocenos,
+                                     fecha_actualizacion
                               FROM configuracion_catalogo
                               WHERE id = @id
                               LIMIT 1;
@@ -51,6 +58,10 @@ public class MySqlConfiguracionCatalogoRepository : IConfiguracionCatalogoReposi
                                 usar_filtro_tabs,
                                 mostrar_precios,
                                 mostrar_stock,
+                                mostrar_seccion_catalogo,
+                                mostrar_seccion_soluciones,
+                                mostrar_seccion_mapa,
+                                mostrar_seccion_conocenos,
                                 fecha_actualizacion
                               )
                               VALUES (
@@ -58,18 +69,30 @@ public class MySqlConfiguracionCatalogoRepository : IConfiguracionCatalogoReposi
                                 @usarFiltroTabs,
                                 @mostrarPrecios,
                                 @mostrarStock,
+                                @mostrarSeccionCatalogo,
+                                @mostrarSeccionSoluciones,
+                                @mostrarSeccionMapa,
+                                @mostrarSeccionConocenos,
                                 @fechaActualizacion
                               )
                               ON DUPLICATE KEY UPDATE
                                 usar_filtro_tabs = VALUES(usar_filtro_tabs),
                                 mostrar_precios = VALUES(mostrar_precios),
                                 mostrar_stock = VALUES(mostrar_stock),
+                                mostrar_seccion_catalogo = VALUES(mostrar_seccion_catalogo),
+                                mostrar_seccion_soluciones = VALUES(mostrar_seccion_soluciones),
+                                mostrar_seccion_mapa = VALUES(mostrar_seccion_mapa),
+                                mostrar_seccion_conocenos = VALUES(mostrar_seccion_conocenos),
                                 fecha_actualizacion = VALUES(fecha_actualizacion);
                               """;
         command.Parameters.AddWithValue("@id", ConfiguracionId);
         command.Parameters.AddWithValue("@usarFiltroTabs", configuracion.UsarFiltroTabs);
         command.Parameters.AddWithValue("@mostrarPrecios", configuracion.MostrarPrecios);
         command.Parameters.AddWithValue("@mostrarStock", configuracion.MostrarStock);
+        command.Parameters.AddWithValue("@mostrarSeccionCatalogo", configuracion.MostrarSeccionCatalogo);
+        command.Parameters.AddWithValue("@mostrarSeccionSoluciones", configuracion.MostrarSeccionSoluciones);
+        command.Parameters.AddWithValue("@mostrarSeccionMapa", configuracion.MostrarSeccionMapa);
+        command.Parameters.AddWithValue("@mostrarSeccionConocenos", configuracion.MostrarSeccionConocenos);
         command.Parameters.AddWithValue("@fechaActualizacion", configuracion.FechaActualizacion);
 
         await command.ExecuteNonQueryAsync(cancellationToken);
@@ -85,6 +108,10 @@ public class MySqlConfiguracionCatalogoRepository : IConfiguracionCatalogoReposi
                                       usar_filtro_tabs BOOLEAN NOT NULL DEFAULT FALSE,
                                       mostrar_precios BOOLEAN NOT NULL DEFAULT FALSE,
                                       mostrar_stock BOOLEAN NOT NULL DEFAULT FALSE,
+                                      mostrar_seccion_catalogo BOOLEAN NOT NULL DEFAULT TRUE,
+                                      mostrar_seccion_soluciones BOOLEAN NOT NULL DEFAULT TRUE,
+                                      mostrar_seccion_mapa BOOLEAN NOT NULL DEFAULT TRUE,
+                                      mostrar_seccion_conocenos BOOLEAN NOT NULL DEFAULT TRUE,
                                       fecha_actualizacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
                                     );
                                     """;
@@ -100,6 +127,26 @@ public class MySqlConfiguracionCatalogoRepository : IConfiguracionCatalogoReposi
             "mostrar_stock",
             "mostrar_stock BOOLEAN NOT NULL DEFAULT FALSE AFTER mostrar_precios",
             cancellationToken);
+        await EnsureColumnAsync(
+            connection,
+            "mostrar_seccion_catalogo",
+            "mostrar_seccion_catalogo BOOLEAN NOT NULL DEFAULT TRUE AFTER mostrar_stock",
+            cancellationToken);
+        await EnsureColumnAsync(
+            connection,
+            "mostrar_seccion_soluciones",
+            "mostrar_seccion_soluciones BOOLEAN NOT NULL DEFAULT TRUE AFTER mostrar_seccion_catalogo",
+            cancellationToken);
+        await EnsureColumnAsync(
+            connection,
+            "mostrar_seccion_mapa",
+            "mostrar_seccion_mapa BOOLEAN NOT NULL DEFAULT TRUE AFTER mostrar_seccion_soluciones",
+            cancellationToken);
+        await EnsureColumnAsync(
+            connection,
+            "mostrar_seccion_conocenos",
+            "mostrar_seccion_conocenos BOOLEAN NOT NULL DEFAULT TRUE AFTER mostrar_seccion_mapa",
+            cancellationToken);
 
         await using MySqlCommand seedCommand = connection.CreateCommand();
         seedCommand.CommandText = """
@@ -108,9 +155,13 @@ public class MySqlConfiguracionCatalogoRepository : IConfiguracionCatalogoReposi
                                     usar_filtro_tabs,
                                     mostrar_precios,
                                     mostrar_stock,
+                                    mostrar_seccion_catalogo,
+                                    mostrar_seccion_soluciones,
+                                    mostrar_seccion_mapa,
+                                    mostrar_seccion_conocenos,
                                     fecha_actualizacion
                                   )
-                                  VALUES (@id, TRUE, FALSE, FALSE, CURRENT_TIMESTAMP);
+                                  VALUES (@id, TRUE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, CURRENT_TIMESTAMP);
                                   """;
         seedCommand.Parameters.AddWithValue("@id", ConfiguracionId);
         await seedCommand.ExecuteNonQueryAsync(cancellationToken);
@@ -140,7 +191,14 @@ public class MySqlConfiguracionCatalogoRepository : IConfiguracionCatalogoReposi
 
         await using MySqlCommand alterCommand = connection.CreateCommand();
         alterCommand.CommandText = $"ALTER TABLE configuracion_catalogo ADD COLUMN {columnDefinition};";
-        await alterCommand.ExecuteNonQueryAsync(cancellationToken);
+        try
+        {
+            await alterCommand.ExecuteNonQueryAsync(cancellationToken);
+        }
+        catch (MySqlException exception) when (exception.Number == 1060)
+        {
+            // Another request may have created the column between the check and the ALTER.
+        }
     }
 
     private static ConfiguracionCatalogo DefaultConfiguracion() =>
@@ -149,6 +207,10 @@ public class MySqlConfiguracionCatalogoRepository : IConfiguracionCatalogoReposi
             UsarFiltroTabs = true,
             MostrarPrecios = false,
             MostrarStock = false,
+            MostrarSeccionCatalogo = true,
+            MostrarSeccionSoluciones = true,
+            MostrarSeccionMapa = true,
+            MostrarSeccionConocenos = true,
             FechaActualizacion = DateTime.UtcNow
         };
 
@@ -157,6 +219,10 @@ public class MySqlConfiguracionCatalogoRepository : IConfiguracionCatalogoReposi
         int usarFiltroTabsOrdinal = reader.GetOrdinal("usar_filtro_tabs");
         int mostrarPreciosOrdinal = reader.GetOrdinal("mostrar_precios");
         int mostrarStockOrdinal = reader.GetOrdinal("mostrar_stock");
+        int mostrarSeccionCatalogoOrdinal = reader.GetOrdinal("mostrar_seccion_catalogo");
+        int mostrarSeccionSolucionesOrdinal = reader.GetOrdinal("mostrar_seccion_soluciones");
+        int mostrarSeccionMapaOrdinal = reader.GetOrdinal("mostrar_seccion_mapa");
+        int mostrarSeccionConocenosOrdinal = reader.GetOrdinal("mostrar_seccion_conocenos");
         int fechaActualizacionOrdinal = reader.GetOrdinal("fecha_actualizacion");
 
         return new ConfiguracionCatalogo
@@ -164,6 +230,10 @@ public class MySqlConfiguracionCatalogoRepository : IConfiguracionCatalogoReposi
             UsarFiltroTabs = reader.GetBoolean(usarFiltroTabsOrdinal),
             MostrarPrecios = reader.GetBoolean(mostrarPreciosOrdinal),
             MostrarStock = reader.GetBoolean(mostrarStockOrdinal),
+            MostrarSeccionCatalogo = reader.GetBoolean(mostrarSeccionCatalogoOrdinal),
+            MostrarSeccionSoluciones = reader.GetBoolean(mostrarSeccionSolucionesOrdinal),
+            MostrarSeccionMapa = reader.GetBoolean(mostrarSeccionMapaOrdinal),
+            MostrarSeccionConocenos = reader.GetBoolean(mostrarSeccionConocenosOrdinal),
             FechaActualizacion = reader.GetDateTime(fechaActualizacionOrdinal)
         };
     }

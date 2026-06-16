@@ -140,6 +140,7 @@ El portal interno gestiona:
 - Administracion global del filtro de la landing, disponible para empleados autenticados.
 - Administracion de visibilidad publica de precios y stock, sin ocultarlos en backoffice.
 - Orden visual de categorias y marcas mediante arrastrar y soltar en backoffice.
+- Gestion de permisos del rol `User` desde Administracion, visible solo para `SuperAdmin`.
 - Usuarios, solo para `SuperAdmin`.
 
 La edicion de producto se abre en modal desde el boton `Editar`. Ese modal gestiona datos, cambio de imagen y archivos asociados. Mientras el modal esta abierto, el scroll de fondo debe quedar bloqueado.

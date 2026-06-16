@@ -6,9 +6,11 @@ import {
   Categoria,
   ConfiguracionCatalogo,
   Marca,
+  PermisosCatalogo,
   PostCategoria,
   PostMarca,
   PostProducto,
+  PostSolucion,
   PostUsuario,
   Producto,
   ProductoArchivo,
@@ -16,7 +18,9 @@ import {
   PutCategoria,
   PutMarca,
   PutProducto,
+  PutSolucion,
   PutUsuario,
+  Solucion,
   Usuario
 } from '../models/api.models';
 
@@ -34,6 +38,12 @@ export interface CatalogoQuery {
   nombre?: string;
   orderAsc?: boolean;
   includeHidden?: boolean;
+}
+
+export interface SolucionesQuery {
+  id?: number;
+  titulo?: string;
+  orderAsc?: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -68,6 +78,18 @@ export class BackendApiService {
 
   updateConfiguracionCatalogo(payload: PutConfiguracionCatalogo): Observable<ConfiguracionCatalogo> {
     return this.http.put<ConfiguracionCatalogo>(`${API_BASE_URL}/configuracion/catalogo`, payload);
+  }
+
+  getPermisosCatalogoActuales(): Observable<PermisosCatalogo> {
+    return this.http.get<PermisosCatalogo>(`${API_BASE_URL}/permisos/catalogo/actuales`);
+  }
+
+  getPermisosCatalogoUser(): Observable<PermisosCatalogo> {
+    return this.http.get<PermisosCatalogo>(`${API_BASE_URL}/permisos/catalogo/user`);
+  }
+
+  updatePermisosCatalogoUser(payload: PermisosCatalogo): Observable<PermisosCatalogo> {
+    return this.http.put<PermisosCatalogo>(`${API_BASE_URL}/permisos/catalogo/user`, payload);
   }
 
   createCategoria(payload: PostCategoria): Observable<Categoria> {
@@ -114,6 +136,36 @@ export class BackendApiService {
 
   deleteMarca(id: number): Observable<void> {
     return this.http.delete<void>(`${API_BASE_URL}/marcas/${id}`);
+  }
+
+  getSoluciones(query: SolucionesQuery = {}): Observable<Solucion[]> {
+    let params = new HttpParams();
+
+    if (query.id && query.id > 0) {
+      params = params.set('idSolucion', String(query.id));
+    }
+    if (query.titulo) {
+      params = params.set('titulo', query.titulo);
+    }
+    params = params.set('orderAsc', String(query.orderAsc ?? true));
+
+    return this.http.get<Solucion[]>(`${API_BASE_URL}/soluciones`, { params });
+  }
+
+  getSolucionById(id: number): Observable<Solucion> {
+    return this.http.get<Solucion>(`${API_BASE_URL}/soluciones/${id}`);
+  }
+
+  createSolucion(payload: PostSolucion): Observable<Solucion> {
+    return this.http.post<Solucion>(`${API_BASE_URL}/soluciones`, payload);
+  }
+
+  updateSolucion(id: number, payload: PutSolucion): Observable<void> {
+    return this.http.put<void>(`${API_BASE_URL}/soluciones/${id}`, payload);
+  }
+
+  deleteSolucion(id: number): Observable<void> {
+    return this.http.delete<void>(`${API_BASE_URL}/soluciones/${id}`);
   }
 
   getProductos(query: ProductosQuery = {}): Observable<Producto[]> {

@@ -55,6 +55,10 @@ export interface ConfiguracionCatalogo {
   usarFiltroTabs: boolean;
   mostrarPrecios: boolean;
   mostrarStock: boolean;
+  mostrarSeccionCatalogo: boolean;
+  mostrarSeccionSoluciones: boolean;
+  mostrarSeccionMapa: boolean;
+  mostrarSeccionConocenos: boolean;
   fechaActualizacion: string;
 }
 
@@ -62,6 +66,24 @@ export interface PutConfiguracionCatalogo {
   usarFiltroTabs: boolean;
   mostrarPrecios: boolean;
   mostrarStock: boolean;
+  mostrarSeccionCatalogo: boolean;
+  mostrarSeccionSoluciones: boolean;
+  mostrarSeccionMapa: boolean;
+  mostrarSeccionConocenos: boolean;
+}
+
+export interface PermisosTipoCatalogo {
+  crear: boolean;
+  modificar: boolean;
+  eliminar: boolean;
+}
+
+export interface PermisosCatalogo {
+  productos: PermisosTipoCatalogo;
+  categorias: PermisosTipoCatalogo;
+  marcas: PermisosTipoCatalogo;
+  soluciones: PermisosTipoCatalogo;
+  fechaActualizacion: string;
 }
 
 export interface PostCategoria {
@@ -108,6 +130,31 @@ export interface PutMarca {
   anioFundacion?: number | null;
   ordenVisual?: number | null;
   esVisible?: boolean | null;
+}
+
+export interface Solucion {
+  id: number;
+  titulo: string;
+  texto: string;
+  emoji: string;
+  ordenVisual: number;
+  fechaCreacion: string;
+  fechaActualizacion?: string | null;
+}
+
+export interface PostSolucion {
+  titulo: string;
+  texto: string;
+  emoji: string;
+  ordenVisual?: number | null;
+}
+
+export interface PutSolucion {
+  id?: number;
+  titulo?: string | null;
+  texto?: string | null;
+  emoji?: string | null;
+  ordenVisual?: number | null;
 }
 
 export interface Producto {

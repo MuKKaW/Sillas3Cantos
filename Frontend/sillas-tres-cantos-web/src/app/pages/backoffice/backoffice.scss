@@ -77,6 +77,10 @@
   align-items: center;
 }
 
+.create-actions {
+  margin-top: 1.2rem;
+}
+
 .switch {
   display: inline-flex;
   gap: 0.45rem;
@@ -137,6 +141,19 @@ td select {
   color: var(--ink-100);
   padding: 0.5rem 0.58rem;
   min-height: 38px;
+}
+
+.required-mark {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.28rem;
+  border-radius: 999px;
+  padding: 0.08rem 0.38rem;
+  background: color-mix(in oklab, var(--accent-3) 18%, #ffffff);
+  color: color-mix(in oklab, var(--accent-2) 82%, var(--ink-100));
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
 }
 
 .actions-cell {
@@ -302,6 +319,17 @@ td select {
   color: var(--ink-100);
   font-size: 0.82rem;
   font-weight: 800;
+}
+
+.solution-emoji {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: #ffffff;
+  border: 1px solid color-mix(in oklab, var(--surface-2) 76%, transparent);
+  font-size: 1.2rem;
 }
 
 .sortable-main {
@@ -524,6 +552,15 @@ td select {
   font-size: 1rem;
 }
 
+.admin-settings-subtitle {
+  margin: 0.25rem 0 0;
+  padding-top: 0.35rem;
+  border-top: 1px solid color-mix(in oklab, var(--surface-2) 72%, transparent);
+  color: var(--ink-400);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+}
+
 .admin-toggle {
   position: relative;
   display: grid;
@@ -531,6 +568,28 @@ td select {
   gap: 0.85rem;
   align-items: center;
   cursor: pointer;
+}
+
+.toggle-field {
+  align-content: end;
+}
+
+.form-toggle {
+  min-height: 42px;
+}
+
+.form-toggle .toggle-track {
+  width: 50px;
+  height: 30px;
+}
+
+.form-toggle .toggle-thumb {
+  width: 22px;
+  height: 22px;
+}
+
+.form-toggle input:checked + .toggle-track .toggle-thumb {
+  transform: translateX(20px);
 }
 
 .admin-toggle input {
@@ -593,6 +652,30 @@ td select {
   padding-top: 0.2rem;
 }
 
+.permission-matrix {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: 1rem;
+}
+
+.permission-row {
+  display: grid;
+  gap: 0.75rem;
+  border: 1px solid color-mix(in oklab, var(--surface-2) 78%, transparent);
+  border-radius: 8px;
+  padding: 0.85rem;
+  background: #ffffff;
+}
+
+.permission-row > div {
+  display: grid;
+  gap: 0.18rem;
+}
+
+.permission-row small {
+  color: var(--ink-300);
+}
+
 .btn:disabled {
   cursor: wait;
   opacity: 0.68;
@@ -621,6 +704,10 @@ td select {
   .sortable-actions {
     grid-column: 1 / -1;
     justify-content: flex-start;
+  }
+
+  .permission-row {
+    grid-template-columns: 1fr;
   }
 
   .edit-product-modal {
@@ -664,6 +751,15 @@ td select {
 
   .admin-settings-title {
     grid-column: 1 / -1;
+  }
+
+  .admin-settings-subtitle {
+    grid-column: 1 / -1;
+  }
+
+  .permission-row {
+    grid-template-columns: minmax(220px, 1fr) repeat(3, minmax(130px, auto));
+    align-items: center;
   }
 }
 

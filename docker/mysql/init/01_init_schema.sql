@@ -36,6 +36,17 @@ CREATE TABLE IF NOT EXISTS categorias (
   UNIQUE KEY uq_categorias_nombre (nombre)
 );
 
+CREATE TABLE IF NOT EXISTS soluciones (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  titulo VARCHAR(100) NOT NULL,
+  texto VARCHAR(255) NOT NULL,
+  emoji VARCHAR(32) NOT NULL,
+  orden_visual INT NOT NULL DEFAULT 0,
+  fecha_creacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  fecha_actualizacion DATETIME NULL DEFAULT NULL,
+  UNIQUE KEY uq_soluciones_titulo (titulo)
+);
+
 CREATE TABLE IF NOT EXISTS productos (
   id INT AUTO_INCREMENT PRIMARY KEY,
   nombre VARCHAR(150) NOT NULL,
@@ -75,10 +86,76 @@ CREATE TABLE IF NOT EXISTS configuracion_catalogo (
   usar_filtro_tabs BOOLEAN NOT NULL DEFAULT FALSE,
   mostrar_precios BOOLEAN NOT NULL DEFAULT FALSE,
   mostrar_stock BOOLEAN NOT NULL DEFAULT FALSE,
+  mostrar_seccion_catalogo BOOLEAN NOT NULL DEFAULT TRUE,
+  mostrar_seccion_soluciones BOOLEAN NOT NULL DEFAULT TRUE,
+  mostrar_seccion_mapa BOOLEAN NOT NULL DEFAULT TRUE,
+  mostrar_seccion_conocenos BOOLEAN NOT NULL DEFAULT TRUE,
+  fecha_actualizacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS permisos_rol_catalogo (
+  rol VARCHAR(30) PRIMARY KEY,
+  productos_crear BOOLEAN NOT NULL DEFAULT TRUE,
+  productos_modificar BOOLEAN NOT NULL DEFAULT TRUE,
+  productos_eliminar BOOLEAN NOT NULL DEFAULT TRUE,
+  categorias_crear BOOLEAN NOT NULL DEFAULT TRUE,
+  categorias_modificar BOOLEAN NOT NULL DEFAULT TRUE,
+  categorias_eliminar BOOLEAN NOT NULL DEFAULT TRUE,
+  marcas_crear BOOLEAN NOT NULL DEFAULT TRUE,
+  marcas_modificar BOOLEAN NOT NULL DEFAULT TRUE,
+  marcas_eliminar BOOLEAN NOT NULL DEFAULT TRUE,
+  soluciones_crear BOOLEAN NOT NULL DEFAULT TRUE,
+  soluciones_modificar BOOLEAN NOT NULL DEFAULT TRUE,
+  soluciones_eliminar BOOLEAN NOT NULL DEFAULT TRUE,
   fecha_actualizacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 SET @schema_name = DATABASE();
+
+SET @sql = IF (
+  EXISTS (
+    SELECT 1
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = @schema_name
+      AND TABLE_NAME = 'permisos_rol_catalogo'
+      AND COLUMN_NAME = 'soluciones_crear'
+  ),
+  'SELECT 1',
+  'ALTER TABLE permisos_rol_catalogo ADD COLUMN soluciones_crear BOOLEAN NOT NULL DEFAULT TRUE AFTER marcas_eliminar'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @sql = IF (
+  EXISTS (
+    SELECT 1
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = @schema_name
+      AND TABLE_NAME = 'permisos_rol_catalogo'
+      AND COLUMN_NAME = 'soluciones_modificar'
+  ),
+  'SELECT 1',
+  'ALTER TABLE permisos_rol_catalogo ADD COLUMN soluciones_modificar BOOLEAN NOT NULL DEFAULT TRUE AFTER soluciones_crear'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @sql = IF (
+  EXISTS (
+    SELECT 1
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = @schema_name
+      AND TABLE_NAME = 'permisos_rol_catalogo'
+      AND COLUMN_NAME = 'soluciones_eliminar'
+  ),
+  'SELECT 1',
+  'ALTER TABLE permisos_rol_catalogo ADD COLUMN soluciones_eliminar BOOLEAN NOT NULL DEFAULT TRUE AFTER soluciones_modificar'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 SET @sql = IF (
   EXISTS (
@@ -90,6 +167,81 @@ SET @sql = IF (
   ),
   'SELECT 1',
   'ALTER TABLE configuracion_catalogo ADD COLUMN mostrar_precios BOOLEAN NOT NULL DEFAULT FALSE AFTER usar_filtro_tabs'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @sql = IF (
+  EXISTS (
+    SELECT 1
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = @schema_name
+      AND TABLE_NAME = 'configuracion_catalogo'
+      AND COLUMN_NAME = 'mostrar_stock'
+  ),
+  'SELECT 1',
+  'ALTER TABLE configuracion_catalogo ADD COLUMN mostrar_stock BOOLEAN NOT NULL DEFAULT FALSE AFTER mostrar_precios'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @sql = IF (
+  EXISTS (
+    SELECT 1
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = @schema_name
+      AND TABLE_NAME = 'configuracion_catalogo'
+      AND COLUMN_NAME = 'mostrar_seccion_catalogo'
+  ),
+  'SELECT 1',
+  'ALTER TABLE configuracion_catalogo ADD COLUMN mostrar_seccion_catalogo BOOLEAN NOT NULL DEFAULT TRUE AFTER mostrar_stock'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @sql = IF (
+  EXISTS (
+    SELECT 1
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = @schema_name
+      AND TABLE_NAME = 'configuracion_catalogo'
+      AND COLUMN_NAME = 'mostrar_seccion_soluciones'
+  ),
+  'SELECT 1',
+  'ALTER TABLE configuracion_catalogo ADD COLUMN mostrar_seccion_soluciones BOOLEAN NOT NULL DEFAULT TRUE AFTER mostrar_seccion_catalogo'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @sql = IF (
+  EXISTS (
+    SELECT 1
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = @schema_name
+      AND TABLE_NAME = 'configuracion_catalogo'
+      AND COLUMN_NAME = 'mostrar_seccion_mapa'
+  ),
+  'SELECT 1',
+  'ALTER TABLE configuracion_catalogo ADD COLUMN mostrar_seccion_mapa BOOLEAN NOT NULL DEFAULT TRUE AFTER mostrar_seccion_soluciones'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @sql = IF (
+  EXISTS (
+    SELECT 1
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = @schema_name
+      AND TABLE_NAME = 'configuracion_catalogo'
+      AND COLUMN_NAME = 'mostrar_seccion_conocenos'
+  ),
+  'SELECT 1',
+  'ALTER TABLE configuracion_catalogo ADD COLUMN mostrar_seccion_conocenos BOOLEAN NOT NULL DEFAULT TRUE AFTER mostrar_seccion_mapa'
 );
 PREPARE stmt FROM @sql;
 EXECUTE stmt;
@@ -454,13 +606,57 @@ WHERE LOWER(username) = 'admin'
   AND role IS NOT NULL
   AND LOWER(role) = 'admin';
 
-INSERT INTO configuracion_catalogo (id, usar_filtro_tabs, mostrar_precios, mostrar_stock, fecha_actualizacion)
-SELECT 1, TRUE, FALSE, FALSE, CURRENT_TIMESTAMP
+INSERT INTO configuracion_catalogo (
+  id,
+  usar_filtro_tabs,
+  mostrar_precios,
+  mostrar_stock,
+  mostrar_seccion_catalogo,
+  mostrar_seccion_soluciones,
+  mostrar_seccion_mapa,
+  mostrar_seccion_conocenos,
+  fecha_actualizacion
+)
+SELECT 1, TRUE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, CURRENT_TIMESTAMP
 WHERE NOT EXISTS (
   SELECT 1
   FROM configuracion_catalogo
   WHERE id = 1
 );
+
+INSERT INTO permisos_rol_catalogo (
+  rol,
+  productos_crear,
+  productos_modificar,
+  productos_eliminar,
+  categorias_crear,
+  categorias_modificar,
+  categorias_eliminar,
+  marcas_crear,
+  marcas_modificar,
+  marcas_eliminar,
+  soluciones_crear,
+  soluciones_modificar,
+  soluciones_eliminar,
+  fecha_actualizacion
+)
+SELECT 'User', TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM permisos_rol_catalogo
+  WHERE rol = 'User'
+);
+
+INSERT IGNORE INTO soluciones (titulo, texto, emoji, orden_visual, fecha_creacion)
+VALUES
+  ('Sillas de ruedas', 'Venta y alquiler para movilidad diaria o temporal.', '♿', 1, CURRENT_TIMESTAMP),
+  ('Camas articuladas', 'Descanso cómodo con soluciones geriátricas.', '▭', 2, CURRENT_TIMESTAMP),
+  ('Scooters eléctricos', 'Autonomía sencilla para moverse cada día.', '⚡', 3, CURRENT_TIMESTAMP),
+  ('Andadores', 'Apoyo estable, ligero y fácil de manejar.', '↗', 4, CURRENT_TIMESTAMP),
+  ('Grúas de traslado', 'Ayuda segura para movilización en casa.', '⌁', 5, CURRENT_TIMESTAMP),
+  ('Ortesis', 'Soportes técnicos para articulaciones y cuidado.', '+', 6, CURRENT_TIMESTAMP),
+  ('Ayudas de baño', 'Seguridad y autonomía para el aseo diario.', '□', 7, CURRENT_TIMESTAMP),
+  ('Plantillas y calzado', 'Adaptación y comodidad para pies delicados.', '✓', 8, CURRENT_TIMESTAMP);
 
 INSERT INTO usuarios (username, password_hash, role, nombre, apellido, email, esta_activo)
 SELECT
